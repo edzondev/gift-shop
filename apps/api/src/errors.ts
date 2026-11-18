@@ -1,0 +1,66 @@
+import type { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
+import type { RequestIdVariables } from "hono/request-id";
+
+export type ApiEnv = {
+  Bindings: CloudflareBindings;
+  Variables: RequestIdVariables;
+};
+
+type ErrorBody = {
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+function errorBody(code: string, message: string): ErrorBody {
+  return { error: { code, message } };
+}
+
+function errorCode(status: number): string {
+  switch (status) {
+    case 400:
+      return "bad_request";
+    case 401:
+      return "unauthorized";
+    case 403:
+      return "forbidden";
+    case 404:
+      return "not_found";
+    case 405:
+      return "method_not_allowed";
+    case 409:
+      return "conflict";
+    case 422:
+      return "unprocessable_entity";
+    case 429:
+      return "too_many_requests";
+    case 500:
+      return "internal_error";
+    default:
+      return "http_error";
+  }
+}
+
+export function notFound(c: Context<ApiEnv>): Response {
+  return c.json(errorBody("not_found", "Not Found"), 404);
+}
+
+export function onError(err: Error, c: Context<ApiEnv>): Response {
+  if (err instanceof HTTPException) {
+    return c.json(errorBody(errorCode(err.status), err.message), err.status);
+  }
+
+  console.error(
+    JSON.stringify({
+      code: "internal_error",
+      method: c.req.method,
+      path: c.req.path,
+      requestId: c.var.requestId,
+      message: err.message,
+    }),
+  );
+
+  return c.json(errorBody("internal_error", "Internal Server Error"), 500);
+}

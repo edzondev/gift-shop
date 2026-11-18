@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gift-shop-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-18",
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "workers_dev": false,
+  "env": {
+    "develop": {
+      "name": "gift-shop-api-develop",
+      "workers_dev": true
+    },
+    "production": {
+      "name": "gift-shop-api-production",
+      "workers_dev": false
+    }
+  }
+}
