@@ -18,6 +18,25 @@ function errorBody(code: string, message: string): ErrorBody {
   return { error: { code, message } };
 }
 
+export function validationError(issues: { path: string; message: string }[]) {
+  return {
+    error: {
+      code: "validation_error",
+      message: "Validation failed",
+      details: { issues },
+    },
+  };
+}
+
+export function productNotFound() {
+  return {
+    error: {
+      code: "product_not_found",
+      message: "Product not found",
+    },
+  };
+}
+
 function errorCode(status: number): string {
   switch (status) {
     case 400:
