@@ -37,6 +37,81 @@ export function productNotFound() {
   };
 }
 
+export function fileTooLarge() {
+  return {
+    error: {
+      code: "file_too_large",
+      message: "File is too large",
+    },
+  };
+}
+
+export function unsupportedFileType() {
+  return {
+    error: {
+      code: "unsupported_file_type",
+      message: "Unsupported file type",
+    },
+  };
+}
+
+export function productUnavailable(productIds: string[]) {
+  return {
+    error: {
+      code: "product_unavailable",
+      message: "Product is unavailable",
+      details: { productIds },
+    },
+  };
+}
+
+export function outOfStock(productIds: string[]) {
+  return {
+    error: {
+      code: "out_of_stock",
+      message: "Not enough stock",
+      details: { productIds },
+    },
+  };
+}
+
+export function priceChanged(totalCents: number) {
+  return {
+    error: {
+      code: "price_changed",
+      message: "Price changed",
+      details: { totalCents },
+    },
+  };
+}
+
+export function idempotencyConflict() {
+  return {
+    error: {
+      code: "idempotency_conflict",
+      message: "Idempotency key was reused with a different request",
+    },
+  };
+}
+
+export function deliveryDateTooSoon() {
+  return {
+    error: {
+      code: "delivery_date_too_soon",
+      message: "Delivery date is too soon",
+    },
+  };
+}
+
+export function orderNotFound() {
+  return {
+    error: {
+      code: "order_not_found",
+      message: "Order not found",
+    },
+  };
+}
+
 function errorCode(status: number): string {
   switch (status) {
     case 400:
