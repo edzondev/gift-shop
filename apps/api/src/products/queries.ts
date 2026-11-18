@@ -1,9 +1,15 @@
+import * as v from "valibot";
 import type { Page, ProductCard, ProductDetail } from "../types";
-import { readString, toProductCard, toProductDetail } from "./mappers";
+import { type ProductRow, productRowSchema, toProductCard, toProductDetail } from "./mappers";
 import { encodeCursor, type ListQuery } from "./schemas";
 
 const COLUMNS =
   "id, slug, name, price_cents, old_price_cents, stock, prep_days, description, fields, occasions, tag, size_classic, size_large, large_extra_cents";
+
+const photoRowSchema = v.object({
+  product_id: v.string(),
+  r2_key: v.string(),
+});
 
 async function photoKeysByProduct(db: D1Database, ids: string[]): Promise<Map<string, string[]>> {
   const grouped = new Map<string, string[]>();
@@ -17,14 +23,17 @@ async function photoKeysByProduct(db: D1Database, ids: string[]): Promise<Map<st
     .bind(...ids)
     .all();
 
-  for (const row of result.results) {
-    const productId = readString(row, "product_id");
-    const key = readString(row, "r2_key");
-    const keys = grouped.get(productId);
-    if (keys === undefined) grouped.set(productId, [key]);
-    else keys.push(key);
+  for (const raw of result.results) {
+    const row = v.parse(photoRowSchema, raw);
+    const keys = grouped.get(row.product_id);
+    if (keys === undefined) grouped.set(row.product_id, [row.r2_key]);
+    else keys.push(row.r2_key);
   }
   return grouped;
+}
+
+function parsePage(raws: readonly Record<string, unknown>[]): ProductRow[] {
+  return raws.map((raw) => v.parse(productRowSchema, raw));
 }
 
 export async function listProducts(db: D1Database, query: ListQuery): Promise<Page<ProductCard>> {
@@ -46,29 +55,28 @@ export async function listProducts(db: D1Database, query: ListQuery): Promise<Pa
     .all();
 
   const hasMore = result.results.length > query.limit;
-  const page = hasMore ? result.results.slice(0, query.limit) : result.results;
-  const ids = page.map((row) => readString(row, "id"));
-  const photos = await photoKeysByProduct(db, ids);
-  const items = page.map((row) => {
-    const id = readString(row, "id");
-    return toProductCard(row, photos.get(id) ?? []);
-  });
-  const lastId = ids[ids.length - 1];
+  const page = parsePage(hasMore ? result.results.slice(0, query.limit) : result.results);
+  const photos = await photoKeysByProduct(
+    db,
+    page.map((row) => row.id),
+  );
+  const items = page.map((row) => toProductCard(row, photos.get(row.id) ?? []));
+  const last = page[page.length - 1];
 
   return {
     items,
-    nextCursor: hasMore && lastId !== undefined ? encodeCursor(lastId) : null,
+    nextCursor: hasMore && last !== undefined ? encodeCursor(last.id) : null,
   };
 }
 
 export async function getProduct(db: D1Database, slug: string): Promise<ProductDetail | null> {
-  const row = await db
+  const raw = await db
     .prepare(`SELECT ${COLUMNS} FROM products WHERE slug = ? AND active = 1`)
     .bind(slug)
     .first();
-  if (row === null) return null;
+  if (raw === null) return null;
 
-  const id = readString(row, "id");
-  const photos = await photoKeysByProduct(db, [id]);
-  return toProductDetail(row, photos.get(id) ?? []);
+  const row = v.parse(productRowSchema, raw);
+  const photos = await photoKeysByProduct(db, [row.id]);
+  return toProductDetail(row, photos.get(row.id) ?? []);
 }
