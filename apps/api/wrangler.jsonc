@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "gift-shop-db-develop",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "3954eb31-dc9c-4b0d-8a67-6e21b05570aa",
       "migrations_dir": "migrations"
     }
   ],
@@ -26,7 +26,7 @@
         {
           "binding": "DB",
           "database_name": "gift-shop-db-develop",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "3954eb31-dc9c-4b0d-8a67-6e21b05570aa",
           "migrations_dir": "migrations"
         }
       ]
