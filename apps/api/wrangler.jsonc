@@ -10,14 +10,38 @@
     }
   },
   "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gift-shop-db-develop",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
   "env": {
     "develop": {
       "name": "gift-shop-api-develop",
-      "workers_dev": true
+      "workers_dev": true,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gift-shop-db-develop",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ]
     },
     "production": {
       "name": "gift-shop-api-production",
-      "workers_dev": false
+      "workers_dev": false,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "gift-shop-db-production",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ]
     }
   }
 }
