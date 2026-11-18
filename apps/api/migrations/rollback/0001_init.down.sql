@@ -1,0 +1,9 @@
+DROP INDEX order_items_order;
+DROP TABLE order_items;
+DROP INDEX orders_created;
+DROP INDEX orders_upcoming;
+DROP INDEX orders_status;
+DROP TABLE orders;
+DROP TABLE product_photos;
+DROP INDEX products_active;
+DROP TABLE products;
