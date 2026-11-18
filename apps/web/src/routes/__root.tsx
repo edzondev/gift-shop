@@ -7,16 +7,21 @@ const fontStylesheet =
   "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75,800&family=Instrument+Serif:ital@1&family=Manrope:wght@400..800&display=swap";
 
 export const Route = createRootRoute({
-  head: () => ({
+  head: ({ match }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Yashira" },
+      { title: match._notFound ? "404" : "Yashira" },
     ],
     links: [{ rel: "stylesheet", href: stylesCss }],
   }),
   component: RootComponent,
+  notFoundComponent: NotFoundPage,
 });
+
+function NotFoundPage() {
+  return <h1>404</h1>;
+}
 
 function RootComponent() {
   return (
