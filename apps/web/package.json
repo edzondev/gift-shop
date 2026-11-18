@@ -1,0 +1,32 @@
+{
+  "name": "web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "typecheck": "pnpm cf-typegen && tsc --noEmit",
+    "test": "vitest run",
+    "deploy:develop": "CLOUDFLARE_ENV=develop vite build && wrangler deploy"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-start": "1.169.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.13",
+    "@cloudflare/vite-plugin": "1.70.0",
+    "@rolldown/plugin-babel": "0.3.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "babel-plugin-react-compiler": "1.0.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.1",
+    "wrangler": "4.164.0"
+  }
+}

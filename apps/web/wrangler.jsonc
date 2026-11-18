@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gift-shop-web",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-11-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "workers_dev": false,
+  "env": {
+    "develop": {
+      "name": "gift-shop-web-develop",
+      "workers_dev": true,
+      "services": [{ "binding": "API", "service": "gift-shop-api-develop" }]
+    },
+    "production": {
+      "name": "gift-shop-web-production",
+      "workers_dev": false,
+      "services": [{ "binding": "API", "service": "gift-shop-api-production" }]
+    }
+  }
+}

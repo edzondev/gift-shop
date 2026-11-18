@@ -1,0 +1,23 @@
+{
+  "extends": "//",
+  "files": {
+    "includes": ["**", "!src/routeTree.gen.ts"]
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "react": {
+                "importNames": ["useEffect", "useLayoutEffect"],
+                "message": "Deriva en render o usa el handler del evento; useEffect solo para sincronizar con algo externo, justificado en el PR"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
