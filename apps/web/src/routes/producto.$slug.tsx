@@ -1,13 +1,39 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { ProductDetailView } from "../components/product-detail";
+import productCss from "../product.css?url";
+import { getProduct } from "../products.functions";
+import storeCss from "../store.css?url";
 
 export const Route = createFileRoute("/producto/$slug")({
-  head: ({ params }) => ({
-    meta: [{ title: params.slug }],
+  loader: async ({ params }) => {
+    const lookup = await getProduct({ data: params.slug });
+    if (lookup.kind === "missing") throw notFound();
+    return lookup.product;
+  },
+  head: ({ loaderData }) => ({
+    meta: [{ title: loaderData === undefined ? "Producto" : loaderData.name }],
+    links: [
+      { rel: "stylesheet", href: storeCss },
+      { rel: "stylesheet", href: productCss },
+    ],
   }),
+  errorComponent: ProductError,
   component: ProductPage,
 });
 
 function ProductPage() {
-  const { slug } = Route.useParams();
-  return <h1>{slug}</h1>;
+  const product = Route.useLoaderData();
+  return (
+    <main className="page">
+      <ProductDetailView product={product} />
+    </main>
+  );
+}
+
+function ProductError() {
+  return (
+    <p role="alert" className="route-error">
+      No pudimos cargar el producto. Inténtalo de nuevo.
+    </p>
+  );
 }
