@@ -1,9 +1,16 @@
-import { expect, it } from "vitest";
+import { beforeEach, expect, it } from "vitest";
+import { summary } from "./admin-fixture";
+import { resetApiFetch, setApiFetch } from "./cloudflare-workers-stub";
 import { renderPath } from "./render-path";
+
+beforeEach(() => {
+  resetApiFetch();
+  setApiFetch(async () => Response.json(summary));
+});
 
 const knownRoutes: ReadonlyArray<readonly [string, string]> = [
   ["/", "<h1>Inicio</h1>"],
-  ["/admin", "<h1>Admin</h1>"],
+  ["/admin", "<h1>Buenos días</h1>"],
 ];
 
 const unknownRoutes = ["/no-existe", "/a%20b", "/%C3%B1"];
