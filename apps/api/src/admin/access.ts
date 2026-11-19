@@ -58,8 +58,8 @@ export const accessAuth = createMiddleware<ApiEnv>(async (c, next) => {
       email = emailFrom(c.var.jwtPayload);
     });
   } catch (error) {
-    if (error instanceof HTTPException && error.status === 401) return c.json(unauthorized(), 401);
-    throw error;
+    if (error instanceof HTTPException && error.status !== 401) throw error;
+    return c.json(unauthorized(), 401);
   }
 
   if (email === null || !(await sameText(email, config.email))) return c.json(forbidden(), 403);
