@@ -13,7 +13,10 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: match._notFound ? "404" : "Yashira" },
     ],
-    links: [{ rel: "stylesheet", href: stylesCss }],
+    links: [
+      { rel: "stylesheet", href: stylesCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+    ],
   }),
   component: RootComponent,
   notFoundComponent: NotFoundPage,

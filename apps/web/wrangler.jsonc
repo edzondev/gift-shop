@@ -11,6 +11,7 @@
     }
   },
   "workers_dev": false,
+  "services": [{ "binding": "API", "service": "gift-shop-api" }],
   "env": {
     "develop": {
       "name": "gift-shop-web-develop",

@@ -9,7 +9,10 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({
+      viteEnvironment: { name: "ssr" },
+      auxiliaryWorkers: [{ configPath: "../api/wrangler.jsonc", devOnly: true }],
+    }),
     tanstackStart({
       router: {
         quoteStyle: "double",
