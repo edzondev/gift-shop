@@ -37,6 +37,15 @@ export function productNotFound() {
   };
 }
 
+export function imageNotFound() {
+  return {
+    error: {
+      code: "image_not_found",
+      message: "Image not found",
+    },
+  };
+}
+
 export function fileTooLarge() {
   return {
     error: {
