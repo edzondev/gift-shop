@@ -40,7 +40,7 @@ export function accessHeaders(assertion: string | undefined): Record<string, str
   return { [ACCESS_ASSERTION]: assertion };
 }
 
-function api(assertion: string | undefined) {
+export function adminClient(assertion: string | undefined) {
   return hc<AppType>("http://api", {
     fetch: (input: RequestInfo | URL, init?: RequestInit) => env.API.fetch(input, init),
     headers: accessHeaders(assertion),
@@ -108,7 +108,7 @@ export async function readSummary(
   assertion: string | undefined,
   todayLabel: string,
 ): Promise<SummaryView> {
-  const response = await api(assertion).admin.summary.$get();
+  const response = await adminClient(assertion).admin.summary.$get();
   return summaryFromResponse(response, todayLabel);
 }
 
@@ -121,7 +121,7 @@ export async function readOrders(
 }
 
 export async function readOrder(assertion: string | undefined, code: string): Promise<OrderView> {
-  const response = await api(assertion).admin.orders[":code"].$get({ param: { code } });
+  const response = await adminClient(assertion).admin.orders[":code"].$get({ param: { code } });
   return orderFromResponse(response);
 }
 
@@ -130,7 +130,7 @@ export async function postStatus(
   code: string,
   to: OrderStatus,
 ): Promise<StatusUpdate> {
-  const response = await api(assertion).admin.orders[":code"].status.$post({
+  const response = await adminClient(assertion).admin.orders[":code"].status.$post({
     param: { code },
     json: { to },
   });
@@ -159,6 +159,8 @@ export function captureResponse(upstream: StatusResponse): Response {
 }
 
 export async function readCapture(assertion: string | undefined, code: string): Promise<Response> {
-  const response = await api(assertion).admin.orders[":code"].capture.$get({ param: { code } });
+  const response = await adminClient(assertion).admin.orders[":code"].capture.$get({
+    param: { code },
+  });
   return captureResponse(response);
 }

@@ -32,6 +32,14 @@ export function AdminShell({ toVerify, children }: { toVerify: number; children:
             Pedidos
             <span className="badge">{toVerify}</span>
           </Link>
+          <Link
+            to="/admin/productos"
+            activeOptions={prefix}
+            className="nav-link"
+            activeProps={{ className: "nav-link nav-current" }}
+          >
+            Productos
+          </Link>
           <Link to="/" className="nav-link nav-quiet">
             Ver tienda
           </Link>
@@ -59,6 +67,14 @@ export function AdminShell({ toVerify, children }: { toVerify: number; children:
           activeProps={{ className: "tab tab-current" }}
         >
           Pedidos
+        </Link>
+        <Link
+          to="/admin/productos"
+          activeOptions={prefix}
+          className="tab"
+          activeProps={{ className: "tab tab-current" }}
+        >
+          Productos
         </Link>
         <Link to="/" className="tab">
           Tienda

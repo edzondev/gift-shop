@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { AdminSummary } from "api";
 import { deliveryPlace, deliveryShort, nameInitial } from "../admin-present";
 import { formatSoles } from "../money";
+import { LowStock } from "./low-stock";
 import { StatusBadge } from "./status-badge";
 
 export function AdminSummaryView({
@@ -116,17 +117,7 @@ export function AdminSummaryView({
           </section>
           <section className="panel">
             <h2>Stock bajo</h2>
-            {summary.lowStock.length === 0 ? <p className="muted">El stock está bien.</p> : null}
-            <ul className="plain">
-              {summary.lowStock.map((item) => (
-                <li key={item.id} className="stock-row">
-                  <span>
-                    <b className="clamp">{item.name}</b>
-                    <span className="low">Quedan {item.stock}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <LowStock items={summary.lowStock} />
           </section>
         </div>
       </div>
