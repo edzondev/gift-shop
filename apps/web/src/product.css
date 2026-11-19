@@ -153,3 +153,16 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+
+.add-cart {
+  min-height: 3.25rem;
+  border: 0;
+  border-radius: 18px;
+  background: var(--color-mustard);
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.add-cart:disabled {
+  opacity: 0.55;
+}

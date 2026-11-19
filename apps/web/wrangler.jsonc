@@ -11,16 +11,28 @@
     }
   },
   "workers_dev": false,
+  "vars": {
+    "YAPE_NUMBER": "REEMPLAZAR",
+    "YAPE_NAME": "REEMPLAZAR"
+  },
   "services": [{ "binding": "API", "service": "gift-shop-api" }],
   "env": {
     "develop": {
       "name": "gift-shop-web-develop",
       "workers_dev": true,
+      "vars": {
+        "YAPE_NUMBER": "REEMPLAZAR",
+        "YAPE_NAME": "REEMPLAZAR"
+      },
       "services": [{ "binding": "API", "service": "gift-shop-api-develop" }]
     },
     "production": {
       "name": "gift-shop-web-production",
       "workers_dev": false,
+      "vars": {
+        "YAPE_NUMBER": "REEMPLAZAR",
+        "YAPE_NAME": "REEMPLAZAR"
+      },
       "services": [{ "binding": "API", "service": "gift-shop-api-production" }]
     }
   }

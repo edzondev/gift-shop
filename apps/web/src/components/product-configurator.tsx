@@ -1,5 +1,8 @@
+import { Link } from "@tanstack/react-router";
 import type { ProductDetail } from "api";
 import { useState } from "react";
+import { canAddGift, lineFromProduct } from "../cart/logic";
+import { addToCart } from "../cart/store";
 import { formatSoles } from "../money";
 import { graphemeCount, limitGraphemes, NAME_LIMIT } from "../name";
 import type { GiftColor, GiftSize } from "../order-types";
@@ -38,12 +41,16 @@ export function ProductConfigurator({ product }: { product: ProductDetail }) {
   const [message, setMessage] = useState("");
   const [wrap, setWrap] = useState(false);
   const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
 
   if (!product.inStock) {
     return (
       <div className="sold-out">
         <PriceRow cents={product.priceCents} oldCents={product.oldPriceCents} />
         <p className="agotado">Agotado</p>
+        <button type="button" className="add-cart" disabled>
+          {`Agregar al carrito · ${formatSoles(product.priceCents)}`}
+        </button>
       </div>
     );
   }
@@ -60,6 +67,15 @@ export function ProductConfigurator({ product }: { product: ProductDetail }) {
   );
   const oldTotal = product.oldPriceCents === null ? null : product.oldPriceCents * quantity;
   const colorLabel = COLORS.find((item) => item.id === color)?.label ?? "Terracota";
+  const ready = canAddGift({
+    inStock: product.inStock,
+    fields: product.fields,
+    name,
+    card: chosenCard,
+    message,
+    quantity,
+    stockLeft: product.stockLeft,
+  });
 
   return (
     <div className="configurator">
@@ -191,6 +207,32 @@ export function ProductConfigurator({ product }: { product: ProductDetail }) {
         </button>
       </fieldset>
       <p className="total" aria-live="polite">{`Total ${formatSoles(total)}`}</p>
+      <button
+        type="button"
+        className="add-cart"
+        disabled={!ready}
+        onClick={() => {
+          const line = lineFromProduct(product, {
+            name,
+            color,
+            size: chosenSize,
+            card: chosenCard,
+            message,
+            wrap: chosenWrap,
+            qty: quantity,
+          });
+          if (line === null) return;
+          addToCart(line);
+          setAdded(true);
+        }}
+      >
+        {`Agregar al carrito · ${formatSoles(total)}`}
+      </button>
+      {added ? (
+        <p className="added" role="status">
+          Agregado al carrito. <Link to="/carrito">Ver carrito</Link>
+        </p>
+      ) : null}
     </div>
   );
 }
