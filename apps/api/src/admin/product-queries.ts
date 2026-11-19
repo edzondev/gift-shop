@@ -40,7 +40,7 @@ function adminProduct(raw: unknown, photos: { id: string; key: string }[]): Admi
   return toAdminProduct(row, active, photos);
 }
 
-async function readAdminProduct(db: D1Database, id: string): Promise<AdminProduct | null> {
+export async function readAdminProduct(db: D1Database, id: string): Promise<AdminProduct | null> {
   const raw = await db
     .prepare(`SELECT ${PRODUCT_COLUMNS}, active FROM products WHERE id = ?`)
     .bind(id)

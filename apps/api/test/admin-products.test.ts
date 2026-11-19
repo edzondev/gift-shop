@@ -4,6 +4,7 @@ import app from "../src/index";
 import { accessPairs, bindings, goodToken, installJwks, restoreAccessFetch } from "./access";
 
 const UNAUTHORIZED = { error: { code: "unauthorized", message: "Unauthorized" } };
+const FORBIDDEN = { error: { code: "forbidden", message: "Forbidden" } };
 const NOT_FOUND = { error: { code: "product_not_found", message: "Product not found" } };
 const PHOTO_NOT_FOUND = { error: { code: "photo_not_found", message: "Photo not found" } };
 const SLUG_TAKEN = { error: { code: "slug_taken", message: "Slug is already taken" } };
@@ -25,6 +26,7 @@ const PDF = Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
 
 const ROUTES: readonly (readonly [string, string])[] = [
   ["GET", "/admin/products"],
+  ["GET", "/admin/products/p01"],
   ["POST", "/admin/products"],
   ["PATCH", "/admin/products/p01"],
   ["POST", "/admin/products/p01/stock"],
@@ -186,6 +188,10 @@ async function objectKeys(): Promise<string[]> {
 async function storedKeys(): Promise<string[]> {
   const result = await env.DB.prepare("SELECT r2_key FROM product_photos ORDER BY r2_key").all();
   return result.results.map((raw) => textField(record(raw), "r2_key")).sort();
+}
+
+function photoFromKey(key: string): { id: string; key: string } {
+  return { id: key.slice("photos/".length, -".jpg".length), key };
 }
 
 function slugs(body: Record<string, unknown>): string[] {
@@ -691,4 +697,100 @@ it("loads every photo on the page in the listed order", async () => {
     second,
   ]);
   expect(right.photoKeys).toEqual([only]);
+});
+
+it("returns a visible product", async () => {
+  await insertProduct({ id: "p01", slug: "ramo-nube", name: "Ramo nube", stock: 8, active: 1 });
+  const response = await authed("/admin/products/p01");
+  expect(response.status).toBe(200);
+  const body = await response.json();
+  expect(body).toEqual({
+    id: "p01",
+    slug: "ramo-nube",
+    name: "Ramo nube",
+    priceCents: 4500,
+    oldPriceCents: null,
+    tag: null,
+    occasions: [],
+    prepDays: 2,
+    photoKeys: [],
+    customizable: false,
+    stockLeft: null,
+    description: "Flores",
+    fields: [],
+    sizes: { classic: "Clásica", large: "Grande", largeExtraCents: 1500 },
+    inStock: true,
+    stock: 8,
+    active: true,
+    photos: [],
+  });
+});
+
+it("returns a hidden product with active false", async () => {
+  await insertProduct({ id: "p-oculto", slug: "oculto", active: 0, stock: 0 });
+  const response = await authed("/admin/products/p-oculto");
+  expect(response.status).toBe(200);
+  const body = record(await response.json());
+  expect(body.id).toBe("p-oculto");
+  expect(body.active).toBe(false);
+  expect(body.inStock).toBe(false);
+  expect(body.stock).toBe(0);
+  expect(body.photos).toEqual([]);
+});
+
+it("returns zero, one, and three photos in position order", async () => {
+  await insertProduct({ id: "none", slug: "none" });
+  await insertProduct({ id: "one", slug: "one" });
+  await insertProduct({ id: "three", slug: "three" });
+  const only = await seedPhoto("one", 1);
+  const third = await seedPhoto("three", 3);
+  const first = await seedPhoto("three", 1);
+  const second = await seedPhoto("three", 2);
+
+  const empty = await authed("/admin/products/none");
+  expect(empty.status).toBe(200);
+  expect(record(await empty.json()).photos).toEqual([]);
+
+  const single = await authed("/admin/products/one");
+  expect(single.status).toBe(200);
+  expect(record(await single.json()).photos).toEqual([photoFromKey(only)]);
+
+  const full = await authed("/admin/products/three");
+  expect(full.status).toBe(200);
+  expect(record(await full.json()).photos).toEqual([
+    photoFromKey(first),
+    photoFromKey(second),
+    photoFromKey(third),
+  ]);
+});
+
+it("returns 404 when the product does not exist", async () => {
+  const response = await authed("/admin/products/missing");
+  expect(response.status).toBe(404);
+  expect(await response.json()).toEqual(NOT_FOUND);
+});
+
+it("returns 403 when the jwt email is not the admin", async () => {
+  await insertProduct({ id: "p01" });
+  const headers = new Headers();
+  headers.set("Cf-Access-Jwt-Assertion", await goodToken({ email: "otra@example.com" }));
+  const response = await app.request("/admin/products/p01", { method: "GET", headers }, bindings());
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual(FORBIDDEN);
+});
+
+it.each(["P01", "ñoño", "a'b", "a b", "a/b", "%", "a\u0000b", "x".repeat(2048)])(
+  "returns 404 for product id %s",
+  async (id) => {
+    await insertProduct({ id: "p01" });
+    const response = await authed(`/admin/products/${encodeURIComponent(id)}`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual(NOT_FOUND);
+  },
+);
+
+it("an empty product id does not match the route", async () => {
+  const response = await authed("/admin/products/");
+  expect(response.status).toBe(404);
+  expect(await response.json()).toEqual({ error: { code: "not_found", message: "Not Found" } });
 });
