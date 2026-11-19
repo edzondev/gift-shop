@@ -121,6 +121,42 @@ export function orderNotFound() {
   };
 }
 
+export function unauthorized(): { error: { code: "unauthorized"; message: string } } {
+  return {
+    error: {
+      code: "unauthorized",
+      message: "Unauthorized",
+    },
+  };
+}
+
+export function forbidden(): { error: { code: "forbidden"; message: string } } {
+  return {
+    error: {
+      code: "forbidden",
+      message: "Forbidden",
+    },
+  };
+}
+
+export function invalidTransition(): { error: { code: "invalid_transition"; message: string } } {
+  return {
+    error: {
+      code: "invalid_transition",
+      message: "Invalid transition",
+    },
+  };
+}
+
+export function internalError(): { error: { code: "internal_error"; message: string } } {
+  return {
+    error: {
+      code: "internal_error",
+      message: "Internal Server Error",
+    },
+  };
+}
+
 function errorCode(status: number): string {
   switch (status) {
     case 400:

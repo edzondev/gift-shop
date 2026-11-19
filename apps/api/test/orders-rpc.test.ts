@@ -1,7 +1,7 @@
 import type { InferResponseType } from "hono/client";
 import { hc } from "hono/client";
 import { expect, it } from "vitest";
-import type { AppType } from "../src/index";
+import type { AdminOrder, AppType } from "../src/index";
 
 const client = hc<AppType>("http://gift-shop.local");
 
@@ -31,4 +31,18 @@ it("types POST /orders 201, 409 and 422 on hc<AppType>", () => {
     true,
     true,
   ]);
+});
+
+type StatusPost = (typeof client.admin.orders)[":code"]["status"]["$post"];
+type StatusOk = InferResponseType<StatusPost, 200>;
+type StatusConflict = InferResponseType<StatusPost, 409>;
+
+it("types POST /admin/orders/:code/status 200 and 409 on hc<AppType>", () => {
+  const ok: Known<StatusOk> = true;
+  const conflict: Known<StatusConflict> = true;
+  const okBody: StatusOk extends AdminOrder ? true : false = true;
+  const conflictBody: StatusConflict extends { error: { code: "invalid_transition" } }
+    ? true
+    : false = true;
+  expect([ok, conflict, okBody, conflictBody]).toEqual([true, true, true, true]);
 });

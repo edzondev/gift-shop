@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
+import { admin } from "./admin/routes";
 import { type ApiEnv, notFound, onError } from "./errors";
 import { images } from "./images/routes";
 import { orders } from "./orders/routes";
@@ -13,13 +14,17 @@ export const app = new Hono<ApiEnv>()
   .get("/health", (c) => c.json({ status: "ok" }))
   .route("/products", products)
   .route("/images", images)
-  .route("/orders", orders);
+  .route("/orders", orders)
+  .route("/admin", admin);
 
 app.notFound(notFound);
 app.onError(onError);
 
 export type AppType = typeof app;
 export type {
+  AdminOrder,
+  AdminOrderRow,
+  AdminSummary,
   CreatedOrder,
   CreateOrderInput,
   Delivery,

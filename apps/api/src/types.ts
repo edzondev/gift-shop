@@ -60,12 +60,38 @@ type PublicOrderBase = {
   yapeOperation: string;
 };
 
-export type PublicOrder =
-  | (PublicOrderBase & { status: "por_verificar" })
-  | (PublicOrderBase & { status: "confirmado"; verifiedAt: string })
-  | (PublicOrderBase & { status: "en_preparacion"; verifiedAt: string })
-  | (PublicOrderBase & { status: "listo"; verifiedAt: string })
-  | (PublicOrderBase & { status: "entregado"; verifiedAt: string; deliveredAt: string })
-  | (PublicOrderBase & { status: "rechazado"; rejectedAt: string });
+type OrderState =
+  | { status: "por_verificar" }
+  | { status: "confirmado"; verifiedAt: string }
+  | { status: "en_preparacion"; verifiedAt: string }
+  | { status: "listo"; verifiedAt: string }
+  | { status: "entregado"; verifiedAt: string; deliveredAt: string }
+  | { status: "rechazado"; rejectedAt: string };
+
+export type PublicOrder = PublicOrderBase & OrderState;
 
 export type OrderStatus = PublicOrder["status"];
+
+export type AdminOrderRow = OrderState & {
+  code: string;
+  customerName: string;
+  itemsShort: string;
+  delivery: Delivery;
+  deliveryDate: string;
+  totalCents: number;
+  createdAt: string;
+};
+
+export type AdminOrder = PublicOrder & {
+  customer: { name: string; phone: string; email: string | null };
+  note: string | null;
+};
+
+export type AdminSummary = {
+  newToday: number;
+  toVerify: number;
+  weekVerifiedSalesCents: number;
+  pending: AdminOrderRow[];
+  upcoming: AdminOrderRow[];
+  lowStock: { id: string; name: string; stock: number }[];
+};

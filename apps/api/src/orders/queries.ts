@@ -377,7 +377,14 @@ export async function createOrder(
   };
 }
 
-function deliveryFrom(row: PublicOrderRow): Delivery {
+export function deliveryFrom(row: {
+  delivery_mode: "estacion" | "delivery";
+  station: string | null;
+  slot: string | null;
+  address: string | null;
+  district: string | null;
+  reference: string | null;
+}): Delivery {
   if (row.delivery_mode === "estacion") {
     return v.parse(deliverySchema, { mode: "estacion", station: row.station, slot: row.slot });
   }
