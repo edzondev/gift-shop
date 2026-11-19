@@ -1,10 +1,39 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { validator } from "hono/validator";
-import { type ApiEnv, invalidTransition, orderNotFound } from "../errors";
+import {
+  type ApiEnv,
+  fileTooLarge,
+  invalidTransition,
+  orderNotFound,
+  outOfStock,
+  photoNotFound,
+  productNotFound,
+  slugTaken,
+  tooManyPhotos,
+  unsupportedFileType,
+  validationError,
+} from "../errors";
+import { MAX_BODY_BYTES } from "../orders/logic";
 import { validationHook } from "../validation";
 import { accessAuth } from "./access";
+import {
+  addProductPhoto,
+  adjustStock,
+  createProduct,
+  deleteProductPhoto,
+  listAdminProducts,
+  patchProduct,
+} from "./product-queries";
 import { readAdminOrder, readCapture, readSummary, searchOrders, setOrderStatus } from "./queries";
-import { ordersQuerySchema, statusBodySchema } from "./schemas";
+import {
+  adminProductsQuerySchema,
+  ordersQuerySchema,
+  productInputSchema,
+  productPatchSchema,
+  statusBodySchema,
+  stockDeltaSchema,
+} from "./schemas";
 
 const orders = new Hono<ApiEnv>()
   .get("/", validator("query", validationHook(ordersQuerySchema)), async (c) => {
@@ -35,10 +64,75 @@ const orders = new Hono<ApiEnv>()
     return c.json(result.order, 200);
   });
 
+const products = new Hono<ApiEnv>()
+  .get("/", validator("query", validationHook(adminProductsQuerySchema)), async (c) => {
+    const page = await listAdminProducts(c.env.DB, c.req.valid("query"));
+    return c.json(page, 200);
+  })
+  .post("/", validator("json", validationHook(productInputSchema)), async (c) => {
+    const result = await createProduct(c.env.DB, c.req.valid("json"), new Date());
+    if (result.type === "slug_taken") return c.json(slugTaken(), 409);
+    return c.json(result.product, 201);
+  })
+  .patch("/:id", validator("json", validationHook(productPatchSchema)), async (c) => {
+    const result = await patchProduct(c.env.DB, c.req.param("id"), c.req.valid("json"));
+    if (result.type === "not_found") return c.json(productNotFound(), 404);
+    if (result.type === "slug_taken") return c.json(slugTaken(), 409);
+    return c.json(result.product, 200);
+  })
+  .post("/:id/stock", validator("json", validationHook(stockDeltaSchema)), async (c) => {
+    const id = c.req.param("id");
+    const result = await adjustStock(c.env.DB, id, c.req.valid("json").delta);
+    if (result.type === "not_found") return c.json(productNotFound(), 404);
+    if (result.type === "out_of_stock") return c.json(outOfStock([id]), 409);
+    return c.json(result.product, 200);
+  })
+  .post(
+    "/:id/photos",
+    bodyLimit({
+      maxSize: MAX_BODY_BYTES,
+      onError: (c) => c.json(fileTooLarge(), 413),
+    }),
+    async (c) => {
+      const body = await c.req.parseBody();
+      const photo = body.photo;
+      if (!(photo instanceof File)) {
+        return c.json(validationError([{ path: "photo", message: "photo must be a file" }]), 422);
+      }
+      const result = await addProductPhoto(c.env.DB, c.env.FILES, {
+        productId: c.req.param("id"),
+        bytes: new Uint8Array(await photo.arrayBuffer()),
+      });
+      switch (result.type) {
+        case "not_found":
+          return c.json(productNotFound(), 404);
+        case "file_too_large":
+          return c.json(fileTooLarge(), 413);
+        case "unsupported_file_type":
+          return c.json(unsupportedFileType(), 415);
+        case "too_many":
+          return c.json(tooManyPhotos(), 409);
+        case "created":
+          return c.json({ id: result.id, key: result.key }, 201);
+      }
+    },
+  )
+  .delete("/:id/photos/:photoId", async (c) => {
+    const deleted = await deleteProductPhoto(
+      c.env.DB,
+      c.env.FILES,
+      c.req.param("id"),
+      c.req.param("photoId"),
+    );
+    if (!deleted) return c.json(photoNotFound(), 404);
+    return c.body(null, 204);
+  });
+
 export const admin = new Hono<ApiEnv>()
   .use("*", accessAuth)
   .get("/summary", async (c) => {
     const summary = await readSummary(c.env.DB, new Date());
     return c.json(summary, 200);
   })
-  .route("/orders", orders);
+  .route("/orders", orders)
+  .route("/products", products);

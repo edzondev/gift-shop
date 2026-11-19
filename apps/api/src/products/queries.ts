@@ -3,31 +3,38 @@ import type { Page, ProductCard, ProductDetail } from "../types";
 import { type ProductRow, productRowSchema, toProductCard, toProductDetail } from "./mappers";
 import { encodeCursor, type ListQuery } from "./schemas";
 
-const COLUMNS =
+export const PRODUCT_COLUMNS =
   "id, slug, name, price_cents, old_price_cents, stock, prep_days, description, fields, occasions, tag, size_classic, size_large, large_extra_cents";
 
 const photoRowSchema = v.object({
+  id: v.string(),
   product_id: v.string(),
   r2_key: v.string(),
 });
 
-async function photoKeysByProduct(db: D1Database, ids: string[]): Promise<Map<string, string[]>> {
-  const grouped = new Map<string, string[]>();
+export type StoredPhoto = { id: string; key: string };
+
+export async function photosByProduct(
+  db: D1Database,
+  ids: readonly string[],
+): Promise<Map<string, StoredPhoto[]>> {
+  const grouped = new Map<string, StoredPhoto[]>();
   if (ids.length === 0) return grouped;
 
   const marks = ids.map(() => "?").join(", ");
   const result = await db
     .prepare(
-      `SELECT product_id, r2_key FROM product_photos WHERE product_id IN (${marks}) ORDER BY position`,
+      `SELECT id, product_id, r2_key FROM product_photos WHERE product_id IN (${marks}) ORDER BY position`,
     )
     .bind(...ids)
     .all();
 
   for (const raw of result.results) {
     const row = v.parse(photoRowSchema, raw);
-    const keys = grouped.get(row.product_id);
-    if (keys === undefined) grouped.set(row.product_id, [row.r2_key]);
-    else keys.push(row.r2_key);
+    const photo = { id: row.id, key: row.r2_key };
+    const photos = grouped.get(row.product_id);
+    if (photos === undefined) grouped.set(row.product_id, [photo]);
+    else photos.push(photo);
   }
   return grouped;
 }
@@ -50,17 +57,24 @@ export async function listProducts(db: D1Database, query: ListQuery): Promise<Pa
   binds.push(query.limit + 1);
 
   const result = await db
-    .prepare(`SELECT ${COLUMNS} FROM products WHERE ${where.join(" AND ")} ORDER BY id LIMIT ?`)
+    .prepare(
+      `SELECT ${PRODUCT_COLUMNS} FROM products WHERE ${where.join(" AND ")} ORDER BY id LIMIT ?`,
+    )
     .bind(...binds)
     .all();
 
   const hasMore = result.results.length > query.limit;
   const page = parsePage(hasMore ? result.results.slice(0, query.limit) : result.results);
-  const photos = await photoKeysByProduct(
+  const photos = await photosByProduct(
     db,
     page.map((row) => row.id),
   );
-  const items = page.map((row) => toProductCard(row, photos.get(row.id) ?? []));
+  const items = page.map((row) =>
+    toProductCard(
+      row,
+      (photos.get(row.id) ?? []).map((photo) => photo.key),
+    ),
+  );
   const last = page[page.length - 1];
 
   return {
@@ -71,12 +85,15 @@ export async function listProducts(db: D1Database, query: ListQuery): Promise<Pa
 
 export async function getProduct(db: D1Database, slug: string): Promise<ProductDetail | null> {
   const raw = await db
-    .prepare(`SELECT ${COLUMNS} FROM products WHERE slug = ? AND active = 1`)
+    .prepare(`SELECT ${PRODUCT_COLUMNS} FROM products WHERE slug = ? AND active = 1`)
     .bind(slug)
     .first();
   if (raw === null) return null;
 
   const row = v.parse(productRowSchema, raw);
-  const photos = await photoKeysByProduct(db, [row.id]);
-  return toProductDetail(row, photos.get(row.id) ?? []);
+  const photos = await photosByProduct(db, [row.id]);
+  return toProductDetail(
+    row,
+    (photos.get(row.id) ?? []).map((photo) => photo.key),
+  );
 }

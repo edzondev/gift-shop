@@ -37,6 +37,33 @@ export function productNotFound() {
   };
 }
 
+export function slugTaken(): { error: { code: "slug_taken"; message: string } } {
+  return {
+    error: {
+      code: "slug_taken",
+      message: "Slug is already taken",
+    },
+  };
+}
+
+export function tooManyPhotos(): { error: { code: "too_many_photos"; message: string } } {
+  return {
+    error: {
+      code: "too_many_photos",
+      message: "A product can have at most 3 photos",
+    },
+  };
+}
+
+export function photoNotFound(): { error: { code: "photo_not_found"; message: string } } {
+  return {
+    error: {
+      code: "photo_not_found",
+      message: "Photo not found",
+    },
+  };
+}
+
 export function imageNotFound() {
   return {
     error: {
@@ -74,7 +101,9 @@ export function productUnavailable(productIds: string[]) {
   };
 }
 
-export function outOfStock(productIds: string[]) {
+export function outOfStock(productIds: string[]): {
+  error: { code: "out_of_stock"; message: string; details: { productIds: string[] } };
+} {
   return {
     error: {
       code: "out_of_stock",

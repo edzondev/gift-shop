@@ -1,4 +1,5 @@
 import type { InferOutput } from "valibot";
+import type { productInputSchema } from "./admin/schemas";
 import type { createOrderInputSchema, deliverySchema } from "./orders/schemas";
 import type { fieldSchema, occasionSchema } from "./products/schemas";
 
@@ -29,6 +30,14 @@ export type ProductDetail = ProductCard & {
   fields: Field[];
   sizes: { classic: string; large: string; largeExtraCents: number };
   inStock: boolean;
+};
+
+export type ProductInput = InferOutput<typeof productInputSchema>;
+
+export type AdminProduct = ProductDetail & {
+  stock: number;
+  active: boolean;
+  photos: { id: string; key: string }[];
 };
 
 export type Delivery = InferOutput<typeof deliverySchema>;
