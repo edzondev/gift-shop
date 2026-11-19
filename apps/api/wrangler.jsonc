@@ -24,6 +24,11 @@
       "bucket_name": "gift-shop-files-develop"
     }
   ],
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
+    "ACCESS_AUD": "REEMPLAZAR",
+    "ADMIN_EMAIL": "REEMPLAZAR"
+  },
   "env": {
     "develop": {
       "name": "gift-shop-api-develop",
@@ -41,7 +46,12 @@
           "binding": "FILES",
           "bucket_name": "gift-shop-files-develop"
         }
-      ]
+      ],
+      "vars": {
+        "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
+        "ACCESS_AUD": "REEMPLAZAR",
+        "ADMIN_EMAIL": "REEMPLAZAR"
+      }
     },
     "production": {
       "name": "gift-shop-api-production",
@@ -59,7 +69,12 @@
           "binding": "FILES",
           "bucket_name": "gift-shop-files"
         }
-      ]
+      ],
+      "vars": {
+        "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
+        "ACCESS_AUD": "REEMPLAZAR",
+        "ADMIN_EMAIL": "REEMPLAZAR"
+      }
     }
   }
 }

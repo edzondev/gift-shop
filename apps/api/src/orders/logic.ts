@@ -102,14 +102,19 @@ export function orderCode(createdAt: string, id: number): string {
   return `REG-${createdAt.slice(0, 4)}-${String(id).padStart(4, "0")}`;
 }
 
-export function orderIdFromCode(code: string): number | null {
+export function orderCodeParts(code: string): { year: string; id: number } | null {
   const match = /^REG-(\d{4})-(\d{4,})$/.exec(code);
   if (match === null) return null;
+  const year = match[1];
   const raw = match[2];
-  if (raw === undefined) return null;
+  if (year === undefined || raw === undefined) return null;
   const id = Number(raw);
   if (!Number.isInteger(id) || id < 1) return null;
-  return id;
+  return { year, id };
+}
+
+export function orderIdFromCode(code: string): number | null {
+  return orderCodeParts(code)?.id ?? null;
 }
 
 const LIMA_OFFSET_MS = 5 * 60 * 60 * 1000;
