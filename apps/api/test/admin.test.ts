@@ -246,6 +246,21 @@ it("a garbage access jwt is 401", async () => {
   }
 });
 
+it("a signed jwt is 401 when the access certs endpoint fails", async () => {
+  const logs = watchLogs();
+  const token = await goodToken();
+  globalThis.fetch = () => Promise.resolve(new Response("missing", { status: 404 }));
+  try {
+    const response = await adminFetch("/admin/summary", { token });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual(UNAUTHORIZED);
+    expect(logs.text()).not.toContain(token);
+    expect(logs.text()).not.toContain("cdn-cgi");
+  } finally {
+    logs.restore();
+  }
+});
+
 it("a bad signature is 401", async () => {
   const [, other] = await accessPairs;
   if (other === undefined) throw new Error("missing key");
