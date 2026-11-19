@@ -1,5 +1,5 @@
 import { createMiddleware, createServerFn, createServerOnlyFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
+import { getRequestHeader, setResponseStatus } from "@tanstack/react-start/server";
 import * as v from "valibot";
 import { ORDER_STATUSES } from "./admin-action";
 import {
@@ -23,6 +23,7 @@ const directCall = createMiddleware({ type: "function" }).client(async ({ next }
     return followed;
   }
   const view: Record<string, unknown> = { kind: followed.kind };
+  if ("status" in followed) view.status = followed.status;
   if ("summary" in followed) view.summary = followed.summary;
   if ("todayLabel" in followed) view.todayLabel = followed.todayLabel;
   if ("page" in followed) view.page = followed.page;
@@ -30,17 +31,26 @@ const directCall = createMiddleware({ type: "function" }).client(async ({ next }
   return { ...followed, result: view };
 });
 
+function publish<T extends { kind: string; status?: number }>(view: T): T {
+  if (view.kind === "denied" && (view.status === 401 || view.status === 403)) {
+    setResponseStatus(view.status);
+  }
+  return view;
+}
+
 export const getAdminSummary = createServerFn({ method: "GET" })
   .middleware([directCall])
   .handler(async () => {
-    return readSummary(getRequestHeader(ACCESS_ASSERTION), limaTodayLabel(new Date()));
+    return publish(
+      await readSummary(getRequestHeader(ACCESS_ASSERTION), limaTodayLabel(new Date())),
+    );
   });
 
 export const listAdminOrders = createServerFn({ method: "GET" })
   .middleware([directCall])
   .validator((input: unknown) => ordersInput(input))
   .handler(async ({ data }) => {
-    return readOrders(getRequestHeader(ACCESS_ASSERTION), ordersInput(data));
+    return publish(await readOrders(getRequestHeader(ACCESS_ASSERTION), ordersInput(data)));
   });
 
 export const getAdminOrder = createServerFn({ method: "GET" })
@@ -48,7 +58,7 @@ export const getAdminOrder = createServerFn({ method: "GET" })
   .validator((input: unknown) => (typeof input === "string" ? input : ""))
   .handler(async ({ data }) => {
     if (data === "") return { kind: "missing" as const };
-    return readOrder(getRequestHeader(ACCESS_ASSERTION), data);
+    return publish(await readOrder(getRequestHeader(ACCESS_ASSERTION), data));
   });
 
 const statusInput = v.object({
@@ -64,7 +74,7 @@ export const setAdminStatus = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data === null) return { kind: "failed" as const };
-    return postStatus(getRequestHeader(ACCESS_ASSERTION), data.code, data.to);
+    return publish(await postStatus(getRequestHeader(ACCESS_ASSERTION), data.code, data.to));
   });
 
 export const serveCapture = createServerOnlyFn(async (request: Request, code: string) => {

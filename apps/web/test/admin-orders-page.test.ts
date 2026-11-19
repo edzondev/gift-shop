@@ -55,7 +55,7 @@ it("shows the POST order and reloads only when the transition was rejected", () 
   expect(shouldReload({ kind: "rejected_transition" })).toBe(true);
   expect(shouldReload({ kind: "updated", order: fresh })).toBe(false);
   expect(shouldReload({ kind: "failed" })).toBe(false);
-  expect(shouldReload({ kind: "denied" })).toBe(false);
+  expect(shouldReload({ kind: "denied", status: 401 })).toBe(false);
   expect(statusMessage({ kind: "rejected_transition" })).toContain("ya no es válido");
   expect(statusMessage({ kind: "updated", order: fresh })).toBeNull();
 });

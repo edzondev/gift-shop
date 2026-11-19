@@ -49,7 +49,7 @@ export function cursorToLoad(input: {
 export type StatusUpdate =
   | { kind: "updated"; order: AdminOrder }
   | { kind: "rejected_transition" }
-  | { kind: "denied" }
+  | { kind: "denied"; status: 401 | 403 }
   | { kind: "failed" };
 
 export function visibleOrder(loaded: AdminOrder, update: StatusUpdate | null): AdminOrder {

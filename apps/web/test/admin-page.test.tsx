@@ -16,9 +16,18 @@ it("renders Sin acceso and no order data when the API refuses the request", asyn
     Response.json({ customerName: "SECRETO-PEDIDO", note: "SECRETO" }, { status: 401 }),
   );
   const page = await renderPath("/admin");
+  expect(page.status).toBe(401);
   expect(page.html).toContain("Sin acceso");
   expect(page.html).not.toContain("SECRETO");
   expect(page.html).not.toContain("Lucía");
+});
+
+it("keeps the 403 status when the API forbids the panel", async () => {
+  setApiFetch(async () => Response.json({ customerName: "SECRETO-PEDIDO" }, { status: 403 }));
+  const page = await renderPath("/admin");
+  expect(page.status).toBe(403);
+  expect(page.html).toContain("Sin acceso");
+  expect(page.html).not.toContain("SECRETO");
 });
 
 it("renders a missing order as 404", async () => {

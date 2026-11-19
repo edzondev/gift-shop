@@ -1,7 +1,7 @@
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
 import { renderToString } from "react-dom/server";
 import { routeTree } from "../src/routeTree.gen";
-import { withAccessRequest } from "./start-request";
+import { documentStatus, withAccessRequest } from "./start-request";
 
 type Rendered = { html: string; status: number; pathname: string };
 
@@ -19,9 +19,10 @@ export async function renderPath(pathname: string): Promise<Rendered> {
       return renderPath(href);
     }
     if (result?.type !== "render") throw new Error("expected render");
+    const helper = documentStatus();
     return {
       html: renderToString(<RouterProvider router={router} />),
-      status: result.status,
+      status: helper ?? result.status,
       pathname,
     };
   });

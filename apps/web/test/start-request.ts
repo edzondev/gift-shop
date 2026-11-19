@@ -14,6 +14,20 @@ function storage(key: symbol): Storage {
   return stored;
 }
 
+export function documentStatus(): number | undefined {
+  const stored: unknown = Object.getOwnPropertyDescriptor(
+    globalThis,
+    Symbol.for("tanstack-start:event-storage"),
+  )?.value;
+  if (typeof stored !== "object" || stored === null || !("getStore" in stored)) return undefined;
+  if (typeof stored.getStore !== "function") return undefined;
+  const store: unknown = stored.getStore();
+  if (typeof store !== "object" || store === null || !("responseState" in store)) return undefined;
+  const state = store.responseState;
+  if (typeof state !== "object" || state === null || !("status" in state)) return undefined;
+  return typeof state.status === "number" ? state.status : undefined;
+}
+
 export function withAccessRequest<T>(token: string | undefined, run: () => T): T {
   const headers = new Headers();
   if (token !== undefined) headers.set("Cf-Access-Jwt-Assertion", token);

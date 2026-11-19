@@ -12,9 +12,12 @@ import { order, summary } from "./admin-fixture";
 it("maps 401 and 403 to denied without reading a payload", async () => {
   const secret = new Response("", { status: 401 });
   const forbidden = new Response("", { status: 403 });
-  expect(await summaryFromResponse(secret, "hoy")).toEqual({ kind: "denied" });
-  expect(await orderFromResponse(forbidden)).toEqual({ kind: "denied" });
-  expect(await ordersFromResponse(new Response("", { status: 401 }))).toEqual({ kind: "denied" });
+  expect(await summaryFromResponse(secret, "hoy")).toEqual({ kind: "denied", status: 401 });
+  expect(await orderFromResponse(forbidden)).toEqual({ kind: "denied", status: 403 });
+  expect(await ordersFromResponse(new Response("", { status: 401 }))).toEqual({
+    kind: "denied",
+    status: 401,
+  });
   expect(JSON.stringify(await statusFromResponse(new Response("", { status: 403 })))).not.toContain(
     "SECRETO",
   );
@@ -71,10 +74,20 @@ it("streams a capture and replaces a denied body", async () => {
   expect(proxied.headers.get("content-type")).toBe("image/jpeg");
   expect(proxied.headers.get("cache-control")).toBe("private, no-store");
 
+  const bare = captureResponse(
+    new Response(new Uint8Array([9]), {
+      status: 200,
+      headers: { "content-type": "image/jpeg", "cache-control": "public, max-age=60" },
+    }),
+  );
+  expect(bare.headers.get("cache-control")).toBe("private, no-store");
+  expect(bare.headers.get("content-type")).toBe("image/jpeg");
+
   const denied = captureResponse(
     new Response("SECRETO-CAPTURA", { status: 401, headers: { "content-type": "image/jpeg" } }),
   );
   expect(denied.status).toBe(401);
   expect(await denied.text()).toBe("Sin acceso");
   expect(denied.headers.get("content-type")).not.toContain("image/jpeg");
+  expect(denied.headers.get("cache-control")).toBe("private, no-store");
 });

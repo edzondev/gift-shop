@@ -20,20 +20,19 @@ type StatusResponse = {
   body: ReadableStream<Uint8Array> | null;
 };
 
+export type Denied = { kind: "denied"; status: 401 | 403 };
+
 export type SummaryView =
   | { kind: "ok"; summary: AdminSummary; todayLabel: string }
-  | { kind: "denied" }
+  | Denied
   | { kind: "failed" };
 
-export type OrdersView =
-  | { kind: "ok"; page: Page<AdminOrderRow> }
-  | { kind: "denied" }
-  | { kind: "failed" };
+export type OrdersView = { kind: "ok"; page: Page<AdminOrderRow> } | Denied | { kind: "failed" };
 
 export type OrderView =
   | { kind: "ok"; order: AdminOrder }
   | { kind: "missing" }
-  | { kind: "denied" }
+  | Denied
   | { kind: "failed" };
 
 export function accessHeaders(assertion: string | undefined): Record<string, string> {
@@ -48,7 +47,7 @@ function api(assertion: string | undefined) {
   });
 }
 
-function denied(status: number): boolean {
+function denied(status: number): status is 401 | 403 {
   return status === 401 || status === 403;
 }
 
@@ -56,7 +55,7 @@ export async function summaryFromResponse(
   response: StatusResponse,
   todayLabel: string,
 ): Promise<SummaryView> {
-  if (denied(response.status)) return { kind: "denied" };
+  if (denied(response.status)) return { kind: "denied", status: response.status };
   if (!response.ok) return { kind: "failed" };
   const body = await response.json();
   const summary = parseAdminSummary(body);
@@ -65,7 +64,7 @@ export async function summaryFromResponse(
 }
 
 export async function ordersFromResponse(response: StatusResponse): Promise<OrdersView> {
-  if (denied(response.status)) return { kind: "denied" };
+  if (denied(response.status)) return { kind: "denied", status: response.status };
   if (!response.ok) return { kind: "failed" };
   const body = await response.json();
   const page = parseOrderPage(body);
@@ -74,7 +73,7 @@ export async function ordersFromResponse(response: StatusResponse): Promise<Orde
 }
 
 export async function orderFromResponse(response: StatusResponse): Promise<OrderView> {
-  if (denied(response.status)) return { kind: "denied" };
+  if (denied(response.status)) return { kind: "denied", status: response.status };
   if (response.status === 404) return { kind: "missing" };
   if (!response.ok) return { kind: "failed" };
   const body = await response.json();
@@ -84,7 +83,7 @@ export async function orderFromResponse(response: StatusResponse): Promise<Order
 }
 
 export async function statusFromResponse(response: StatusResponse): Promise<StatusUpdate> {
-  if (denied(response.status)) return { kind: "denied" };
+  if (denied(response.status)) return { kind: "denied", status: response.status };
   if (response.status === 409) {
     const body = await response.json();
     return isInvalidTransition(body) ? { kind: "rejected_transition" } : { kind: "failed" };
@@ -138,24 +137,24 @@ export async function postStatus(
   return statusFromResponse(response);
 }
 
-const CAPTURE_HEADERS = ["content-type", "cache-control", "etag"] as const;
+const PRIVATE_CAPTURE = "private, no-store";
 
 export function captureResponse(upstream: StatusResponse): Response {
   if (denied(upstream.status)) {
     return new Response("Sin acceso", {
       status: upstream.status,
       headers: {
-        "cache-control": "private, no-store",
+        "cache-control": PRIVATE_CAPTURE,
         "content-type": "text/plain; charset=utf-8",
       },
     });
   }
   const headers = new Headers();
-  for (const name of CAPTURE_HEADERS) {
-    const value = upstream.headers.get(name);
-    if (value !== null) headers.set(name, value);
-  }
-  if (!headers.has("cache-control")) headers.set("cache-control", "private, no-store");
+  const type = upstream.headers.get("content-type");
+  if (type !== null) headers.set("content-type", type);
+  const etag = upstream.headers.get("etag");
+  if (etag !== null) headers.set("etag", etag);
+  headers.set("cache-control", PRIVATE_CAPTURE);
   return new Response(upstream.body, { status: upstream.status, headers });
 }
 
