@@ -24,6 +24,7 @@ import {
   deleteProductPhoto,
   listAdminProducts,
   patchProduct,
+  readAdminProduct,
 } from "./product-queries";
 import { readAdminOrder, readCapture, readSummary, searchOrders, setOrderStatus } from "./queries";
 import {
@@ -68,6 +69,11 @@ const products = new Hono<ApiEnv>()
   .get("/", validator("query", validationHook(adminProductsQuerySchema)), async (c) => {
     const page = await listAdminProducts(c.env.DB, c.req.valid("query"));
     return c.json(page, 200);
+  })
+  .get("/:id", async (c) => {
+    const product = await readAdminProduct(c.env.DB, c.req.param("id"));
+    if (product === null) return c.json(productNotFound(), 404);
+    return c.json(product, 200);
   })
   .post("/", validator("json", validationHook(productInputSchema)), async (c) => {
     const result = await createProduct(c.env.DB, c.req.valid("json"), new Date());
