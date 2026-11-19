@@ -112,51 +112,14 @@ export function orderIdFromCode(code: string): number | null {
   return id;
 }
 
-function datePart(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string {
-  const found = parts.find((part) => part.type === type);
-  if (found === undefined) throw new Error("missing date part");
-  return found.value;
+const LIMA_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+export function limaTimestamp(now: Date): string {
+  return new Date(now.getTime() - LIMA_OFFSET_MS).toISOString().replace("Z", "-05:00");
 }
 
 export function limaToday(now: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Lima",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-}
-
-export function limaTimestamp(now: Date): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Lima",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(now);
-  const hour = datePart(parts, "hour") === "24" ? "00" : datePart(parts, "hour");
-  const date = `${datePart(parts, "year")}-${datePart(parts, "month")}-${datePart(parts, "day")}`;
-  const time = `${hour}:${datePart(parts, "minute")}:${datePart(parts, "second")}`;
-  const ms = String(now.getMilliseconds()).padStart(3, "0");
-  const year = Number(date.slice(0, 4));
-  const month = Number(date.slice(5, 7));
-  const day = Number(date.slice(8, 10));
-  const [hh, mm, ss] = time.split(":");
-  if (hh === undefined || mm === undefined || ss === undefined)
-    throw new Error("missing date part");
-  const asUtc = Date.UTC(year, month - 1, day, Number(hh), Number(mm), Number(ss), Number(ms));
-  const offsetMinutes = Math.round((asUtc - now.getTime()) / 60000);
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const absolute = Math.abs(offsetMinutes);
-  const offset =
-    String(Math.floor(absolute / 60)).padStart(2, "0") +
-    ":" +
-    String(absolute % 60).padStart(2, "0");
-  return `${date}T${time}.${ms}${sign}${offset}`;
+  return limaTimestamp(now).slice(0, 10);
 }
 
 export function addDays(isoDate: string, days: number): string {
@@ -191,6 +154,18 @@ export function deliveryCostCents(mode: CreateOrderInput["delivery"]["mode"]): n
   return mode === "estacion" ? 0 : null;
 }
 
+const UNAVAILABLE_OPTIONS: {
+  key: "name" | "color" | "size" | "card" | "wrap";
+  field: Field;
+  isSet: (item: Item) => boolean;
+}[] = [
+  { key: "name", field: "nombre", isSet: (item) => item.name !== undefined },
+  { key: "color", field: "color", isSet: (item) => item.color !== undefined },
+  { key: "size", field: "tamano", isSet: (item) => item.size === "grande" },
+  { key: "card", field: "tarjeta", isSet: (item) => item.card !== undefined },
+  { key: "wrap", field: "envoltura", isSet: (item) => item.wrap === true },
+];
+
 export function unavailableOptionIssues(
   items: readonly Item[],
   fieldsByProduct: ReadonlyMap<string, readonly Field[]>,
@@ -198,35 +173,11 @@ export function unavailableOptionIssues(
   const issues: { path: string; message: string }[] = [];
   for (const [index, item] of items.entries()) {
     const fields = fieldsByProduct.get(item.productId) ?? [];
-    const has = (field: Field) => fields.includes(field);
-    if (item.name !== undefined && !has("nombre")) {
+    for (const option of UNAVAILABLE_OPTIONS) {
+      if (!option.isSet(item) || fields.includes(option.field)) continue;
       issues.push({
-        path: `items.${index}.name`,
-        message: "name is not available for this product",
-      });
-    }
-    if (item.color !== undefined && !has("color")) {
-      issues.push({
-        path: `items.${index}.color`,
-        message: "color is not available for this product",
-      });
-    }
-    if (item.size === "grande" && !has("tamano")) {
-      issues.push({
-        path: `items.${index}.size`,
-        message: "size is not available for this product",
-      });
-    }
-    if (item.card !== undefined && !has("tarjeta")) {
-      issues.push({
-        path: `items.${index}.card`,
-        message: "card is not available for this product",
-      });
-    }
-    if (item.wrap === true && !has("envoltura")) {
-      issues.push({
-        path: `items.${index}.wrap`,
-        message: "wrap is not available for this product",
+        path: `items.${index}.${option.key}`,
+        message: `${option.key} is not available for this product`,
       });
     }
   }
