@@ -24,6 +24,7 @@ export type AppType = typeof app;
 export type {
   AdminOrder,
   AdminOrderRow,
+  AdminProduct,
   AdminSummary,
   CreatedOrder,
   CreateOrderInput,
@@ -35,6 +36,7 @@ export type {
   Page,
   ProductCard,
   ProductDetail,
+  ProductInput,
   PublicOrder,
 } from "./types";
 export { createOrderInputSchema };

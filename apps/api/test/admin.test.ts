@@ -1,15 +1,20 @@
 import { env } from "cloudflare:workers";
 import { sign } from "hono/jwt";
-import type { HonoJsonWebKey } from "hono/utils/jwt/jws";
-import type { JWTPayload } from "hono/utils/jwt/types";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { commitStatus } from "../src/admin/queries";
 import app from "../src/index";
 import { addDays, limaToday, orderCode, orderIdFromCode } from "../src/orders/logic";
+import {
+  AUD,
+  accessPairs,
+  bindings,
+  certFetches,
+  claims,
+  goodToken,
+  installJwks,
+  restoreAccessFetch,
+} from "./access";
 
-const TEAM = "access.test";
-const AUD = "aud-tag";
-const ADMIN = "yashira@example.com";
 const UNAUTHORIZED = { error: { code: "unauthorized", message: "Unauthorized" } };
 const FORBIDDEN = { error: { code: "forbidden", message: "Forbidden" } };
 const NOT_FOUND = { error: { code: "order_not_found", message: "Order not found" } };
@@ -36,8 +41,6 @@ const transitions = STATUSES.flatMap((from) =>
   STATUSES.map((to) => ({ from, to, ok: (VALID[from] ?? []).includes(to) })),
 );
 
-type Pair = { privateKey: HonoJsonWebKey; publicKey: HonoJsonWebKey };
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -45,95 +48,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function record(value: unknown): Record<string, unknown> {
   if (!isRecord(value)) throw new Error("expected object");
   return value;
-}
-
-function webKey(value: ArrayBuffer | JsonWebKey): JsonWebKey {
-  if (value instanceof ArrayBuffer) throw new Error("expected jwk");
-  return value;
-}
-
-async function generatePair(kid: string): Promise<Pair> {
-  const key = await crypto.subtle.generateKey(
-    {
-      name: "RSASSA-PKCS1-v1_5",
-      modulusLength: 2048,
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256",
-    },
-    true,
-    ["sign", "verify"],
-  );
-  if (!("privateKey" in key)) throw new Error("expected key pair");
-  const exportedPrivate = webKey(await crypto.subtle.exportKey("jwk", key.privateKey));
-  const exportedPublic = webKey(await crypto.subtle.exportKey("jwk", key.publicKey));
-  const n = exportedPublic.n;
-  const e = exportedPublic.e;
-  if (n === undefined || e === undefined) throw new Error("incomplete jwk");
-  return {
-    privateKey: { ...exportedPrivate, alg: "RS256", kid },
-    publicKey: { kty: exportedPublic.kty, n, e, alg: "RS256", kid, use: "sig" },
-  };
-}
-
-const pairs = Promise.all([generatePair("test-key"), generatePair("other-key")]);
-
-let fetches = 0;
-let restoreFetch = (): void => {};
-
-function installJwks(publicKey: HonoJsonWebKey): void {
-  const real = globalThis.fetch;
-  fetches = 0;
-  globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-    const url =
-      input instanceof Request ? input.url : input instanceof URL ? input.href : String(input);
-    if (url !== `https://${TEAM}/cdn-cgi/access/certs`) {
-      return Promise.reject(new Error(`unexpected fetch ${url}`));
-    }
-    fetches += 1;
-    void init;
-    return Promise.resolve(
-      new Response(JSON.stringify({ keys: [publicKey] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-  };
-  restoreFetch = () => {
-    globalThis.fetch = real;
-  };
-}
-
-function claims(overrides: JWTPayload = {}): JWTPayload {
-  const now = Math.floor(Date.now() / 1000);
-  return {
-    aud: [AUD],
-    email: ADMIN,
-    exp: now + 3600,
-    nbf: now - 60,
-    iat: now - 60,
-    iss: `https://${TEAM}`,
-    sub: "admin-user",
-    type: "app",
-    ...overrides,
-  };
-}
-
-async function goodToken(overrides: JWTPayload = {}): Promise<string> {
-  const [good] = await pairs;
-  if (good === undefined) throw new Error("missing key");
-  return sign(claims(overrides), good.privateKey);
-}
-
-function bindings(
-  overrides: { ACCESS_TEAM_DOMAIN?: string; ACCESS_AUD?: string; ADMIN_EMAIL?: string } = {},
-) {
-  return {
-    DB: env.DB,
-    FILES: env.FILES,
-    ACCESS_TEAM_DOMAIN: overrides.ACCESS_TEAM_DOMAIN ?? TEAM,
-    ACCESS_AUD: overrides.ACCESS_AUD ?? AUD,
-    ADMIN_EMAIL: overrides.ADMIN_EMAIL ?? ADMIN,
-  };
 }
 
 function adminFetch(
@@ -303,20 +217,20 @@ function watchLogs(): { text: () => string; restore: () => void } {
 
 beforeEach(async () => {
   await reset();
-  const [good] = await pairs;
+  const [good] = await accessPairs;
   if (good === undefined) throw new Error("missing key");
   installJwks(good.publicKey);
 });
 
 afterEach(() => {
-  restoreFetch();
+  restoreAccessFetch();
 });
 
 it("GET /admin/summary without a header is 401 and does not fetch certs", async () => {
   const response = await adminFetch("/admin/summary");
   expect(response.status).toBe(401);
   expect(await response.json()).toEqual(UNAUTHORIZED);
-  expect(fetches).toBe(0);
+  expect(certFetches()).toBe(0);
 });
 
 it("a garbage access jwt is 401", async () => {
@@ -325,7 +239,7 @@ it("a garbage access jwt is 401", async () => {
     const response = await adminFetch("/admin/summary", { token: "jwt-secreto-no-loguear" });
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual(UNAUTHORIZED);
-    expect(fetches).toBe(0);
+    expect(certFetches()).toBe(0);
     expect(logs.text()).not.toContain("jwt-secreto-no-loguear");
   } finally {
     logs.restore();
@@ -333,13 +247,13 @@ it("a garbage access jwt is 401", async () => {
 });
 
 it("a bad signature is 401", async () => {
-  const [, other] = await pairs;
+  const [, other] = await accessPairs;
   if (other === undefined) throw new Error("missing key");
   const token = await sign(claims(), { ...other.privateKey, kid: "test-key" });
   const response = await adminFetch("/admin/summary", { token });
   expect(response.status).toBe(401);
   expect(await response.json()).toEqual(UNAUTHORIZED);
-  expect(fetches).toBe(1);
+  expect(certFetches()).toBe(1);
 });
 
 it("a token with the wrong audience is 401", async () => {
@@ -393,7 +307,7 @@ it("a missing access var is 500 and does not say which one", async () => {
   expect(text).not.toContain("ACCESS_AUD");
   expect(text).not.toContain("ACCESS_TEAM_DOMAIN");
   expect(text).not.toContain("secret-team-host");
-  expect(fetches).toBe(0);
+  expect(certFetches()).toBe(0);
 });
 
 it("an unknown admin path still requires access", async () => {

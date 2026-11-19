@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import type { ProductCard, ProductDetail } from "../types";
+import type { AdminProduct, ProductCard, ProductDetail } from "../types";
 import { fieldsSchema, occasionsSchema } from "./schemas";
 
 function jsonColumn<Schema extends v.GenericSchema>(schema: Schema) {
@@ -52,5 +52,21 @@ export function toProductDetail(row: ProductRow, photoKeys: string[]): ProductDe
       largeExtraCents: row.large_extra_cents,
     },
     inStock: row.stock > 0,
+  };
+}
+
+export function toAdminProduct(
+  row: ProductRow,
+  active: boolean,
+  photos: { id: string; key: string }[],
+): AdminProduct {
+  return {
+    ...toProductDetail(
+      row,
+      photos.map((photo) => photo.key),
+    ),
+    stock: row.stock,
+    active,
+    photos,
   };
 }

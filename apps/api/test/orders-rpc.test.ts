@@ -1,7 +1,7 @@
 import type { InferResponseType } from "hono/client";
 import { hc } from "hono/client";
 import { expect, it } from "vitest";
-import type { AdminOrder, AppType } from "../src/index";
+import type { AdminOrder, AdminProduct, AppType } from "../src/index";
 
 const client = hc<AppType>("http://gift-shop.local");
 
@@ -44,5 +44,31 @@ it("types POST /admin/orders/:code/status 200 and 409 on hc<AppType>", () => {
   const conflictBody: StatusConflict extends { error: { code: "invalid_transition" } }
     ? true
     : false = true;
+  expect([ok, conflict, okBody, conflictBody]).toEqual([true, true, true, true]);
+});
+
+type ProductPost = typeof client.admin.products.$post;
+type ProductCreated = InferResponseType<ProductPost, 201>;
+type ProductConflict = InferResponseType<ProductPost, 409>;
+
+it("types POST /admin/products 201 and 409 on hc<AppType>", () => {
+  const created: Known<ProductCreated> = true;
+  const conflict: Known<ProductConflict> = true;
+  const createdBody: ProductCreated extends AdminProduct ? true : false = true;
+  const conflictBody: ProductConflict extends { error: { code: "slug_taken" } } ? true : false =
+    true;
+  expect([created, conflict, createdBody, conflictBody]).toEqual([true, true, true, true]);
+});
+
+type StockPost = (typeof client.admin.products)[":id"]["stock"]["$post"];
+type StockOk = InferResponseType<StockPost, 200>;
+type StockConflict = InferResponseType<StockPost, 409>;
+
+it("types POST /admin/products/:id/stock 200 and 409 on hc<AppType>", () => {
+  const ok: Known<StockOk> = true;
+  const conflict: Known<StockConflict> = true;
+  const okBody: StockOk extends AdminProduct ? true : false = true;
+  const conflictBody: StockConflict extends { error: { code: "out_of_stock" } } ? true : false =
+    true;
   expect([ok, conflict, okBody, conflictBody]).toEqual([true, true, true, true]);
 });
