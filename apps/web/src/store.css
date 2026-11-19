@@ -100,14 +100,51 @@ button:disabled {
 }
 
 .product-photo {
+  display: block;
+  position: relative;
   width: 100%;
   aspect-ratio: 4 / 5;
   border-radius: 28px;
+  overflow: hidden;
+}
+
+.product-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-photo-thumb {
   aspect-ratio: 1;
   border-radius: 18px;
+}
+
+.product-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: transparent;
+}
+
+.product-thumb[aria-pressed="true"] {
+  border-color: var(--color-text);
+}
+
+.product-thumb .product-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
 }
 
 .product-gallery {

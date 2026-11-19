@@ -98,6 +98,9 @@ it("renders the active fields and blocks an out-of-stock product", async () => {
   const product = await renderPath("/producto/pinata");
   expect(product.status).toBe(200);
   expect(product.html).toContain("Piñata de corazón 🎁");
+  expect(product.html).toContain('src="/img/photos/a.webp"');
+  expect(product.html).toContain('alt="Piñata de corazón 🎁"');
+  expect(product.html).toContain('fetchPriority="high"');
   expect(product.html).toContain("¿Para quién es?");
   expect(product.html).toContain("Terracota");
   expect(product.html).toContain("Clásica");
@@ -111,6 +114,7 @@ it("renders the active fields and blocks an out-of-stock product", async () => {
   const agotado = await renderPath("/producto/agotado");
   expect(agotado.status).toBe(200);
   expect(agotado.html).toContain("Agotado");
+  expect(agotado.html).not.toContain("Quedan 0");
   expect(agotado.html).not.toContain("¿Para quién es?");
   expect(agotado.html).not.toContain("Agregar al carrito");
 
