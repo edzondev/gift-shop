@@ -14,9 +14,8 @@ export default defineConfig({
       enforce: "pre",
       load(id) {
         const [filename, query] = id.split("?");
-        if (!filename?.endsWith(".css")) return undefined;
-        const params = new URLSearchParams(query);
-        if (params.has("url")) return `export default ${JSON.stringify(filename)}`;
+        if (!filename?.includes(".css")) return undefined;
+        if (query?.includes("url")) return `export default ${JSON.stringify(filename)}`;
         return "export default {}";
       },
     },

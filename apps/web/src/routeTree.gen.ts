@@ -15,6 +15,9 @@ import { Route as CatalogoRouteImport } from "./routes/catalogo"
 import { Route as AdminIndexRouteImport } from "./routes/admin.index"
 import { Route as ImgSplatRouteImport } from "./routes/img.$"
 import { Route as ProductoSlugRouteImport } from "./routes/producto.$slug"
+import { Route as AdminCapturaCodeRouteImport } from "./routes/admin.captura.$code"
+import { Route as AdminPedidosIndexRouteImport } from "./routes/admin.pedidos.index"
+import { Route as AdminPedidosCodeRouteImport } from "./routes/admin.pedidos.$code"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -46,6 +49,21 @@ const ProductoSlugRoute = ProductoSlugRouteImport.update({
   path: "/producto/$slug",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCapturaCodeRoute = AdminCapturaCodeRouteImport.update({
+  id: "/captura/$code",
+  path: "/captura/$code",
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPedidosIndexRoute = AdminPedidosIndexRouteImport.update({
+  id: "/pedidos/",
+  path: "/pedidos/",
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPedidosCodeRoute = AdminPedidosCodeRouteImport.update({
+  id: "/pedidos/$code",
+  path: "/pedidos/$code",
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
@@ -54,6 +72,9 @@ export interface FileRoutesByFullPath {
   "/img/$": typeof ImgSplatRoute
   "/producto/$slug": typeof ProductoSlugRoute
   "/admin/": typeof AdminIndexRoute
+  "/admin/captura/$code": typeof AdminCapturaCodeRoute
+  "/admin/pedidos/$code": typeof AdminPedidosCodeRoute
+  "/admin/pedidos/": typeof AdminPedidosIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
@@ -61,6 +82,9 @@ export interface FileRoutesByTo {
   "/img/$": typeof ImgSplatRoute
   "/producto/$slug": typeof ProductoSlugRoute
   "/admin": typeof AdminIndexRoute
+  "/admin/captura/$code": typeof AdminCapturaCodeRoute
+  "/admin/pedidos/$code": typeof AdminPedidosCodeRoute
+  "/admin/pedidos": typeof AdminPedidosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,13 +94,32 @@ export interface FileRoutesById {
   "/img/$": typeof ImgSplatRoute
   "/producto/$slug": typeof ProductoSlugRoute
   "/admin/": typeof AdminIndexRoute
+  "/admin/captura/$code": typeof AdminCapturaCodeRoute
+  "/admin/pedidos/$code": typeof AdminPedidosCodeRoute
+  "/admin/pedidos/": typeof AdminPedidosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    "/" | "/admin" | "/catalogo" | "/img/$" | "/producto/$slug" | "/admin/"
+    | "/"
+    | "/admin"
+    | "/catalogo"
+    | "/img/$"
+    | "/producto/$slug"
+    | "/admin/"
+    | "/admin/captura/$code"
+    | "/admin/pedidos/$code"
+    | "/admin/pedidos/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/catalogo" | "/img/$" | "/producto/$slug" | "/admin"
+  to:
+    | "/"
+    | "/catalogo"
+    | "/img/$"
+    | "/producto/$slug"
+    | "/admin"
+    | "/admin/captura/$code"
+    | "/admin/pedidos/$code"
+    | "/admin/pedidos"
   id:
     | "__root__"
     | "/"
@@ -85,6 +128,9 @@ export interface FileRouteTypes {
     | "/img/$"
     | "/producto/$slug"
     | "/admin/"
+    | "/admin/captura/$code"
+    | "/admin/pedidos/$code"
+    | "/admin/pedidos/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,15 +185,42 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ProductoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/admin/captura/$code": {
+      id: "/admin/captura/$code"
+      path: "/captura/$code"
+      fullPath: "/admin/captura/$code"
+      preLoaderRoute: typeof AdminCapturaCodeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    "/admin/pedidos/": {
+      id: "/admin/pedidos/"
+      path: "/pedidos"
+      fullPath: "/admin/pedidos/"
+      preLoaderRoute: typeof AdminPedidosIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    "/admin/pedidos/$code": {
+      id: "/admin/pedidos/$code"
+      path: "/pedidos/$code"
+      fullPath: "/admin/pedidos/$code"
+      preLoaderRoute: typeof AdminPedidosCodeRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminCapturaCodeRoute: typeof AdminCapturaCodeRoute
+  AdminPedidosCodeRoute: typeof AdminPedidosCodeRoute
+  AdminPedidosIndexRoute: typeof AdminPedidosIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
+  AdminCapturaCodeRoute: AdminCapturaCodeRoute,
+  AdminPedidosCodeRoute: AdminPedidosCodeRoute,
+  AdminPedidosIndexRoute: AdminPedidosIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
