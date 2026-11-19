@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { type PhotoFrame, photoIsBroken, photoView } from "../photo";
+
 const TONES = [
   "#ebdccb",
   "#e2d6c4",
@@ -21,39 +24,51 @@ function photoTone(seed: string): string {
   return TONES[hash] ?? TONES[0] ?? "#ebdccb";
 }
 
-function frame(seed: string, className: string, label: string, decorative: boolean) {
-  const tone = photoTone(seed);
-  if (decorative) {
-    return <div className={className} style={{ backgroundColor: tone }} aria-hidden="true" />;
+export function ProductPhoto({
+  photoKey,
+  label,
+  frame,
+  priority,
+  decorative,
+}: {
+  photoKey: string | undefined;
+  label: string;
+  frame: PhotoFrame;
+  priority: boolean;
+  decorative: boolean;
+}) {
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const view = photoView({
+    photoKey,
+    label,
+    frame,
+    priority,
+    broken: photoIsBroken(failedKey, photoKey),
+  });
+  const className = frame === "main" ? "product-photo" : "product-photo product-photo-thumb";
+  const style = {
+    backgroundColor: photoTone(photoKey ?? label),
+    aspectRatio: frame === "main" ? "4 / 5" : "1",
+  };
+  if (view.kind === "filler" && decorative) {
+    return <span className={className} style={style} aria-hidden="true" />;
+  }
+  if (view.kind === "filler") {
+    return <span className={className} style={style} role="img" aria-label={label} />;
   }
   return (
-    <div className={className} style={{ backgroundColor: tone }} role="img" aria-label={label} />
-  );
-}
-
-export function ProductPhoto({
-  photoKeys,
-  label,
-  layout,
-}: {
-  photoKeys: readonly string[];
-  label: string;
-  layout: "card" | "detail";
-}) {
-  const mainSeed = photoKeys[0] ?? label;
-  const main = frame(mainSeed, "product-photo", label, layout === "card");
-  if (layout === "card") return main;
-  const extras = photoKeys.slice(1);
-  return (
-    <div className="product-gallery">
-      {main}
-      {extras.length === 0 ? null : (
-        <div className="product-photo-row">
-          {extras.map((key) => (
-            <div key={key}>{frame(key, "product-photo product-photo-thumb", label, true)}</div>
-          ))}
-        </div>
-      )}
-    </div>
+    <span className={className} style={style}>
+      <img
+        src={view.src}
+        alt={view.alt}
+        width={view.width}
+        height={view.height}
+        loading={view.loading}
+        fetchPriority={view.fetchPriority}
+        onError={() => {
+          if (photoKey !== undefined) setFailedKey(photoKey);
+        }}
+      />
+    </span>
   );
 }

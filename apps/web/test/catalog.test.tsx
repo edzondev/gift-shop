@@ -74,6 +74,12 @@ it("renders the catalog from the injected page", async () => {
   expect(page.html).toContain("Nuevo");
   expect(page.html).toContain("Listo en 3 días");
   expect(page.html).toContain("Quedan 2");
+  expect(page.html).toContain('src="/img/photos/pinata.webp"');
+  expect(page.html).toContain(`alt="${catalog.pinataCard.name}"`);
+  expect(page.html).toContain('width="800"');
+  expect(page.html).toContain('height="1000"');
+  expect(page.html).toContain('fetchPriority="high"');
+  expect(page.html.match(/<img /g)).toHaveLength(1);
   expect(page.html).toContain("Personalizable");
   expect(page.html).toContain(catalog.ramoCard.name);
   expect(page.html).toContain("Ver más");

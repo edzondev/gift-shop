@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ProductDetail as Detail } from "api";
 import { ProductConfigurator } from "./product-configurator";
 import { ProductFacts } from "./product-facts";
-import { ProductPhoto } from "./product-photo";
+import { ProductGallery } from "./product-gallery";
 
 export function ProductDetailView({ product }: { product: Detail }) {
   return (
@@ -15,7 +15,7 @@ export function ProductDetailView({ product }: { product: Detail }) {
         <span>{product.name}</span>
       </p>
       <div className="product-layout">
-        <ProductPhoto photoKeys={product.photoKeys} label={product.name} layout="detail" />
+        <ProductGallery slug={product.slug} photoKeys={product.photoKeys} label={product.name} />
         <div className="product-copy">
           <ProductFacts product={product} agotado={!product.inStock} />
           <h1>{product.name}</h1>
