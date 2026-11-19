@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { validator } from "hono/validator";
@@ -16,36 +15,11 @@ import {
 } from "../errors";
 import { validationHook } from "../validation";
 import { MAX_BODY_BYTES } from "./logic";
-import { type CreateOrderResult, createOrder, readPublicOrder } from "./queries";
+import { createOrder, readPublicOrder } from "./queries";
 import { idempotencyHeaderSchema } from "./schemas";
 
 function issue(path: string, message: string) {
   return { path, message };
-}
-
-function respond(c: Context<ApiEnv>, result: CreateOrderResult): Response {
-  switch (result.type) {
-    case "created":
-      return c.json(result.order, 201);
-    case "replayed":
-      return c.json(result.order, 200);
-    case "validation":
-      return c.json(validationError(result.issues), 422);
-    case "file_too_large":
-      return c.json(fileTooLarge(), 413);
-    case "unsupported_file_type":
-      return c.json(unsupportedFileType(), 415);
-    case "product_unavailable":
-      return c.json(productUnavailable(result.productIds), 409);
-    case "out_of_stock":
-      return c.json(outOfStock(result.productIds), 409);
-    case "price_changed":
-      return c.json(priceChanged(result.totalCents), 409);
-    case "idempotency_conflict":
-      return c.json(idempotencyConflict(), 409);
-    case "delivery_date_too_soon":
-      return c.json(deliveryDateTooSoon(), 422);
-  }
 }
 
 export const orders = new Hono<ApiEnv>()
@@ -74,7 +48,28 @@ export const orders = new Hono<ApiEnv>()
         capture: new Uint8Array(await captureField.arrayBuffer()),
         now: new Date(),
       });
-      return respond(c, result);
+      switch (result.type) {
+        case "created":
+          return c.json(result.order, 201);
+        case "replayed":
+          return c.json(result.order, 200);
+        case "validation":
+          return c.json(validationError(result.issues), 422);
+        case "file_too_large":
+          return c.json(fileTooLarge(), 413);
+        case "unsupported_file_type":
+          return c.json(unsupportedFileType(), 415);
+        case "product_unavailable":
+          return c.json(productUnavailable(result.productIds), 409);
+        case "out_of_stock":
+          return c.json(outOfStock(result.productIds), 409);
+        case "price_changed":
+          return c.json(priceChanged(result.totalCents), 409);
+        case "idempotency_conflict":
+          return c.json(idempotencyConflict(), 409);
+        case "delivery_date_too_soon":
+          return c.json(deliveryDateTooSoon(), 422);
+      }
     },
   )
   .get("/:code", async (c) => {
