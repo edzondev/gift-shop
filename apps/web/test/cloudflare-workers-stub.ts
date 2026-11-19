@@ -13,6 +13,8 @@ export function resetApiFetch(): void {
 }
 
 export const env = {
+  YAPE_NUMBER: "REEMPLAZAR",
+  YAPE_NAME: "REEMPLAZAR",
   API: {
     fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
       return bindingFetch(input, init);

@@ -109,14 +109,15 @@ it("renders the active fields and blocks an out-of-stock product", async () => {
   expect(product.html).toContain("Envoltura");
   expect(product.html).toContain("Cantidad");
   expect(product.html).toContain("Total");
-  expect(product.html).not.toContain("Agregar al carrito");
+  expect(product.html).toContain("Agregar al carrito · ");
 
   const agotado = await renderPath("/producto/agotado");
   expect(agotado.status).toBe(200);
   expect(agotado.html).toContain("Agotado");
   expect(agotado.html).not.toContain("Quedan 0");
   expect(agotado.html).not.toContain("¿Para quién es?");
-  expect(agotado.html).not.toContain("Agregar al carrito");
+  expect(agotado.html).toContain("Agregar al carrito");
+  expect(agotado.html).toContain('class="add-cart" disabled=""');
 
   const solo = await renderPath("/producto/solo");
   expect(solo.html).toContain("Tarjeta con dedicatoria");

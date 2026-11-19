@@ -1,12 +1,18 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { pedidoHeaders } from "../pedido-headers";
 import stylesCss from "../styles.css?url";
+import { SiteHeader } from "../ui/site-header";
 
 const fontStylesheet =
   // biome-ignore lint/security/noSecrets: URL pública de Google Fonts, no es una credencial
   "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75,800&family=Instrument+Serif:ital@1&family=Manrope:wght@400..800&display=swap";
 
 export const Route = createRootRoute({
+  headers: ({ matches }) => {
+    const pathname = matches.at(-1)?.pathname ?? "";
+    return pedidoHeaders(pathname);
+  },
   head: ({ match }) => ({
     meta: [
       { charSet: "utf-8" },
@@ -29,6 +35,7 @@ function NotFoundPage() {
 function RootComponent() {
   return (
     <RootDocument>
+      <SiteHeader />
       <Outlet />
     </RootDocument>
   );
