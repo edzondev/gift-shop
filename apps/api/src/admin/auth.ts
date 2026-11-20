@@ -118,12 +118,22 @@ async function readPayload(token: string, secret: string) {
   }
 }
 
+function sessionConfig(env: { ADMIN_EMAIL?: unknown; ADMIN_SESSION_SECRET?: unknown }): {
+  email: string;
+  secret: string;
+} | null {
+  const email = readEmail(env.ADMIN_EMAIL);
+  const secret = readSecret(env.ADMIN_SESSION_SECRET);
+  if (email === null || secret === null) return null;
+  return { email, secret };
+}
+
 export const adminAuth = createMiddleware<ApiEnv>(async (c, next) => {
   const token = bearerToken(c.req.header("Authorization"));
   if (token === null) return c.json(unauthorized(), 401);
-  const email = readEmail(c.env.ADMIN_EMAIL);
-  const secret = readSecret(c.env.ADMIN_SESSION_SECRET);
-  if (email === null || secret === null) return c.json(internalError(), 500);
+  const config = sessionConfig(c.env);
+  if (config === null) return c.json(internalError(), 500);
+  const { email, secret } = config;
   const payload = await readPayload(token, secret);
   if (payload === null) return c.json(unauthorized(), 401);
   if (!(await sameText(subjectOf(payload.sub), email))) return c.json(unauthorized(), 401);
