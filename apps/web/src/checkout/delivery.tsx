@@ -31,14 +31,18 @@ export function DeliveryFields({
 }) {
   return (
     <section className="panel">
-      <h2>¿Cómo lo recibes?</h2>
-      <div className="choice-row">
+      <h2>
+        <span className="step-n">2</span>
+        ¿Cómo lo recibes?
+      </h2>
+      <div className="receive">
         <button
           type="button"
           aria-pressed={delivery.mode === "estacion"}
           onClick={() => onMode("estacion")}
         >
-          Estación del tren
+          <b>Estación del tren</b>
+          <span>Línea 1 · coordinamos por WhatsApp</span>
           <small>Gratis</small>
         </button>
         <button
@@ -46,7 +50,8 @@ export function DeliveryFields({
           aria-pressed={delivery.mode === "delivery"}
           onClick={() => onMode("delivery")}
         >
-          Delivery a domicilio
+          <b>Delivery a domicilio</b>
+          <span>A tu puerta, en cualquier distrito</span>
           <small>Costo según zona</small>
         </button>
       </div>
@@ -54,7 +59,7 @@ export function DeliveryFields({
         <>
           <fieldset className="choices">
             <legend>Estación</legend>
-            <div className="choice-row">
+            <div className="choice-row chips">
               {STATIONS.map((station) => (
                 <button
                   key={station}
@@ -71,7 +76,7 @@ export function DeliveryFields({
           </fieldset>
           <fieldset className="choices">
             <legend>Horario</legend>
-            <div className="choice-row">
+            <div className="choice-row chips">
               {SLOTS.map((slot) => (
                 <button
                   key={slot}
@@ -92,6 +97,7 @@ export function DeliveryFields({
           <Field id="address" label="Dirección" error={errors.address}>
             <input
               {...fieldProps("address", errors.address)}
+              placeholder="Av., calle, número, dpto."
               value={delivery.address}
               onChange={(event) =>
                 onDelivery({
@@ -126,6 +132,7 @@ export function DeliveryFields({
           <Field id="reference" label="Referencia" hint="(opcional)" error={errors.reference}>
             <input
               {...fieldProps("reference", errors.reference)}
+              placeholder="Frente al parque, portón verde…"
               value={delivery.reference}
               onChange={(event) =>
                 onDelivery({

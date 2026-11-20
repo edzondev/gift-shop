@@ -29,7 +29,10 @@ export function CatalogResults({
   }
 
   const view = catalogPageState(firstPage, occasion, extra);
-  const count = view.items.length === 1 ? "1 regalo" : `${view.items.length} regalos`;
+  const count =
+    view.items.length === 1
+      ? "1 regalo listo para personalizar."
+      : `${view.items.length} regalos listos para personalizar.`;
 
   function loadMore() {
     const cursor = cursorToLoad({ loading: busy.current || loading, nextCursor: view.nextCursor });
@@ -62,14 +65,26 @@ export function CatalogResults({
 
   return (
     <>
-      <p className="catalog-count">{count}</p>
+      <header className="catalog-head">
+        <div className="catalog-title">
+          <p className="shop-kicker">Hechos a mano, uno por uno</p>
+          <h1>Catálogo</h1>
+        </div>
+        <p className="lede">
+          <span className="catalog-count">{count}</span> Elige una ocasión o explóralos todos.
+        </p>
+      </header>
       <OccasionFilter active={occasion} />
       <ProductGrid products={view.items} />
-      {failed ? <p role="alert">No pudimos cargar más regalos.</p> : null}
+      {failed ? (
+        <p role="alert" className="catalog-alert">
+          No pudimos cargar más regalos.
+        </p>
+      ) : null}
       {view.nextCursor === null ? null : (
         <button
           type="button"
-          className="more"
+          className="more shop-cta"
           onClick={loadMore}
           disabled={loading}
           aria-busy={loading}
@@ -77,6 +92,20 @@ export function CatalogResults({
           Ver más
         </button>
       )}
+      <aside className="catalog-custom">
+        <div>
+          <p className="shop-kicker">¿Tienes otra idea en mente?</p>
+          <p className="catalog-custom-title">También hago encargos a medida</p>
+        </div>
+        <a
+          className="shop-cta shop-cta-dark"
+          href="https://wa.me/51987654321?text=Hola%20%F0%9F%92%9B%20Quiero%20un%20regalo%20a%20medida"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Cuéntame por WhatsApp
+        </a>
+      </aside>
     </>
   );
 }

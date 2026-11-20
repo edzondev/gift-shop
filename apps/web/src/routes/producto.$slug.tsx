@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ProductDetailView } from "../components/product-detail";
 import productCss from "../product.css?url";
 import { getProduct } from "../products.functions";
+import shopCss from "../shop.css?url";
 import storeCss from "../store.css?url";
 
 export const Route = createFileRoute("/producto/$slug")({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/producto/$slug")({
     links: [
       { rel: "stylesheet", href: storeCss },
       { rel: "stylesheet", href: productCss },
+      { rel: "stylesheet", href: shopCss },
     ],
   }),
   errorComponent: ProductError,
@@ -24,8 +26,10 @@ export const Route = createFileRoute("/producto/$slug")({
 function ProductPage() {
   const product = Route.useLoaderData();
   return (
-    <main className="page">
-      <ProductDetailView product={product} />
+    <main className="shop">
+      <div className="shop-wrap">
+        <ProductDetailView product={product} />
+      </div>
     </main>
   );
 }

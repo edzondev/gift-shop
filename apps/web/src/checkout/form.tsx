@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { type FormEvent, useRef, useState, useSyncExternalStore } from "react";
 import { captureError } from "../capture";
@@ -167,7 +167,7 @@ export function CheckoutForm({
 
   return (
     <form className="checkout" onSubmit={onSubmit}>
-      <div>
+      <div className="checkout-main">
         <CustomerFields
           name={draft.name}
           phone={draft.phone}
@@ -221,6 +221,9 @@ export function CheckoutForm({
             {formError}
           </p>
         ) : null}
+        <Link to="/carrito" className="back-cart">
+          ← Volver al carrito
+        </Link>
       </div>
       <OrderSummary lines={lines} delivery={draft.delivery} />
     </form>

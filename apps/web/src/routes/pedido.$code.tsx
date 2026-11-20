@@ -1,6 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { OrderView } from "../order/view";
+import orderCss from "../order.css?url";
 import { getPublicOrder } from "../orders.functions";
+import shopCss from "../shop.css?url";
+import storeCss from "../store.css?url";
 
 type OrderSearch = { t: string };
 
@@ -22,6 +25,11 @@ export const Route = createFileRoute("/pedido/$code")({
   headers: () => privateHeaders,
   head: ({ params }) => ({
     meta: [{ title: params.code }, { name: "referrer", content: "no-referrer" }],
+    links: [
+      { rel: "stylesheet", href: storeCss },
+      { rel: "stylesheet", href: shopCss },
+      { rel: "stylesheet", href: orderCss },
+    ],
   }),
   component: OrderPage,
 });
