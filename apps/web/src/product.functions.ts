@@ -1,7 +1,8 @@
 import { createMiddleware, createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseStatus } from "@tanstack/react-start/server";
 import * as v from "valibot";
-import { ACCESS_ASSERTION, adminClient } from "./admin-api";
+import { adminClient } from "./admin-api";
+import { readSessionToken } from "./admin-session";
 import { readJsonLimited } from "./limited-json";
 import {
   createProduct,
@@ -32,6 +33,10 @@ const directCall = createMiddleware({ type: "function" }).client(async ({ next }
   return { ...followed, result: view };
 });
 
+function sessionToken(): string | undefined {
+  return readSessionToken(getRequestHeader("cookie") ?? null);
+}
+
 function publish<T extends { kind: string; status?: number }>(view: T): T {
   if (view.kind === "denied" && (view.status === 401 || view.status === 403)) {
     setResponseStatus(view.status);
@@ -50,7 +55,7 @@ export const listAdminProducts = createServerFn({ method: "GET" })
     return parsed.success ? parsed.output : {};
   })
   .handler(async ({ data }) => {
-    return publish(await readProducts(getRequestHeader(ACCESS_ASSERTION), data.cursor));
+    return publish(await readProducts(sessionToken(), data.cursor));
   });
 
 export const getAdminProduct = createServerFn({ method: "GET" })
@@ -58,7 +63,7 @@ export const getAdminProduct = createServerFn({ method: "GET" })
   .validator((input: unknown) => (typeof input === "string" ? input : ""))
   .handler(async ({ data }) => {
     if (data === "") return { kind: "missing" as const };
-    return publish(await readProductById(getRequestHeader(ACCESS_ASSERTION), data));
+    return publish(await readProductById(sessionToken(), data));
   });
 
 export const createAdminProduct = createServerFn({ method: "POST" })
@@ -67,7 +72,7 @@ export const createAdminProduct = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const parsed = parseDraft(data, "create");
     if (!parsed.ok) return publish({ kind: "invalid" as const, fields: parsed.fields });
-    return publish(await createProduct(getRequestHeader(ACCESS_ASSERTION), parsed.value));
+    return publish(await createProduct(sessionToken(), parsed.value));
   });
 
 export const saveAdminProduct = createServerFn({ method: "POST" })
@@ -82,13 +87,13 @@ export const saveAdminProduct = createServerFn({ method: "POST" })
     }
     const parsed = parseDraft(data.draft, "edit");
     if (!parsed.ok) return publish({ kind: "invalid" as const, fields: parsed.fields });
-    const assertion = getRequestHeader(ACCESS_ASSERTION);
-    const current = await readProductById(assertion, data.id);
+    const token = sessionToken();
+    const current = await readProductById(token, data.id);
     if (current.kind === "denied" || current.kind === "missing") return publish(current);
     if (current.kind !== "ok") return publish({ kind: "failed" as const });
     const patch = changedInput(inputFromProduct(current.product), parsed.value);
     if (patch === null) return publish({ kind: "unchanged" as const, product: current.product });
-    return publish(await patchProduct(assertion, data.id, patch));
+    return publish(await patchProduct(token, data.id, patch));
   });
 
 const activeSchema = v.object({
@@ -104,9 +109,7 @@ export const setProductActive = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data === null) return publish({ kind: "failed" as const });
-    return publish(
-      await patchProduct(getRequestHeader(ACCESS_ASSERTION), data.id, { active: data.active }),
-    );
+    return publish(await patchProduct(sessionToken(), data.id, { active: data.active }));
   });
 
 const stockSchema = v.object({
@@ -122,7 +125,7 @@ export const adjustAdminStock = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data === null) return publish({ kind: "failed" as const });
-    return publish(await postStock(getRequestHeader(ACCESS_ASSERTION), data.id, data.delta));
+    return publish(await postStock(sessionToken(), data.id, data.delta));
   });
 
 const REPLY_LIMIT = 65_536;
@@ -178,8 +181,7 @@ async function readCapped(
 }
 
 export const receivePhoto = createServerOnlyFn(async (request: Request, id: string) => {
-  const header = request.headers.get(ACCESS_ASSERTION);
-  const assertion = header === null || header === "" ? undefined : header;
+  const token = readSessionToken(request.headers.get("cookie"));
   const opened = await openPhoto(request);
   if (!opened.ok) return photoError(opened.status);
   const bytes = await readCapped(opened.stream, PHOTO_BYTES);
@@ -187,7 +189,7 @@ export const receivePhoto = createServerOnlyFn(async (request: Request, id: stri
   const meta = photoMeta(opened.kind);
   const form = new FormData();
   form.append("photo", new File([bytes], meta.filename, { type: meta.type }));
-  const upstream = await adminClient(assertion).admin.products[":id"].photos.$post(
+  const upstream = await adminClient(token).admin.products[":id"].photos.$post(
     { param: { id } },
     { init: { body: form } },
   );
@@ -196,9 +198,8 @@ export const receivePhoto = createServerOnlyFn(async (request: Request, id: stri
 
 export const removePhoto = createServerOnlyFn(
   async (request: Request, id: string, photoId: string) => {
-    const header = request.headers.get(ACCESS_ASSERTION);
-    const assertion = header === null || header === "" ? undefined : header;
-    const upstream = await adminClient(assertion).admin.products[":id"].photos[":photoId"].$delete({
+    const token = readSessionToken(request.headers.get("cookie"));
+    const upstream = await adminClient(token).admin.products[":id"].photos[":photoId"].$delete({
       param: { id, photoId },
     });
     return passUpstream(upstream);

@@ -1,4 +1,4 @@
-import { notFound, useNavigate, useRouter } from "@tanstack/react-router";
+import { Navigate, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import type { AdminProduct } from "api";
 import { useRef, useState } from "react";
 import { createAdminProduct, saveAdminProduct } from "../product.functions";
@@ -24,7 +24,6 @@ import { uploadProductPhoto } from "../product-upload";
 import { clearField, firstFile } from "./field-value";
 import { ProductForm } from "./product-form";
 import { ProductPhotos } from "./product-photos";
-import { SinAcceso } from "./sin-acceso";
 
 function avisoCode(code: string): PhotoAviso {
   switch (code) {
@@ -76,7 +75,7 @@ export function ProductEditor({
     gate.current = releaseClick();
   }
   if (missing) throw notFound();
-  if (denied) return <SinAcceso />;
+  if (denied) return <Navigate to="/admin/login" />;
 
   const errors = mark === errorMark ? serverFields : {};
   const baseline = current === null ? null : inputFromProduct(current);

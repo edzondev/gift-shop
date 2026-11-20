@@ -1,6 +1,5 @@
 import type { AdminProduct } from "api";
 import { beforeEach, expect, it } from "vitest";
-import { ACCESS_ASSERTION } from "../src/admin-api";
 import { getAdminProduct } from "../src/product.functions";
 import { summary } from "./admin-fixture";
 import { resetApiFetch, setApiFetch } from "./cloudflare-workers-stub";
@@ -110,7 +109,7 @@ it("turns product_not_found into notFound", async () => {
   expect(productCalls(calls)).toEqual(["GET /admin/products/ausente"]);
 });
 
-it("shows Sin acceso with the API 401 and does not read that body", async () => {
+it("redirects to login on API 401 and does not read that body", async () => {
   const responses: Response[] = [];
   const calls = install(() => {
     const response = Response.json(product("p05", "SECRETO-401", true), { status: 401 });
@@ -118,9 +117,10 @@ it("shows Sin acceso with the API 401 and does not read that body", async () => 
     return response;
   });
   const page = await renderPath("/admin/productos/p05");
-  expect(page.status).toBe(401);
-  expect(page.html).toContain("<h1>Sin acceso</h1>");
+  expect(page.pathname).toBe("/admin/login");
+  expect(page.html).toContain("Entrar");
   expect(page.html).not.toContain("SECRETO-401");
+  expect(page.html).not.toContain("<h1>Editar producto</h1>");
   expect(responses[0]?.bodyUsed).toBe(false);
   expect(productCalls(calls)).toEqual(["GET /admin/products/p05"]);
 });
@@ -144,15 +144,15 @@ it("shows an error when the API returns 500", async () => {
   expect(productCalls(calls)).toEqual(["GET /admin/products/p05"]);
 });
 
-it("forwards Cf-Access-Jwt-Assertion on the product request", async () => {
+it("forwards the session cookie as a bearer token on the product request", async () => {
   let seen: string | null = null;
   setApiFetch(async (input, init) => {
     const request = input instanceof Request ? input : new Request(input, init);
-    seen = request.headers.get(ACCESS_ASSERTION);
+    seen = request.headers.get("authorization");
     return Response.json(product("p05", VISIBLE_NAME, true));
   });
   const view = await withAccessRequest("jwt-de-prueba", () => getAdminProduct({ data: "p05" }));
-  expect(seen).toBe("jwt-de-prueba");
+  expect(seen).toBe("Bearer jwt-de-prueba");
   expect(view.kind).toBe("ok");
   if (view.kind !== "ok") return;
   expect(view.product.name).toBe(VISIBLE_NAME);

@@ -10,8 +10,6 @@ import {
 import type { StatusUpdate } from "./admin-orders-page";
 import type { OrdersRequest } from "./admin-search";
 
-export const ACCESS_ASSERTION = "Cf-Access-Jwt-Assertion";
-
 type StatusResponse = {
   status: number;
   ok: boolean;
@@ -35,15 +33,15 @@ export type OrderView =
   | Denied
   | { kind: "failed" };
 
-export function accessHeaders(assertion: string | undefined): Record<string, string> {
-  if (assertion === undefined || assertion === "") return {};
-  return { [ACCESS_ASSERTION]: assertion };
+export function bearerHeaders(token: string | undefined): Record<string, string> {
+  if (token === undefined || token === "") return {};
+  return { Authorization: `Bearer ${token}` };
 }
 
-export function adminClient(assertion: string | undefined) {
+export function adminClient(token: string | undefined) {
   return hc<AppType>("http://api", {
     fetch: (input: RequestInfo | URL, init?: RequestInit) => env.API.fetch(input, init),
-    headers: accessHeaders(assertion),
+    headers: bearerHeaders(token),
   });
 }
 
@@ -105,32 +103,32 @@ function ordersUrl(request: OrdersRequest): string {
 }
 
 export async function readSummary(
-  assertion: string | undefined,
+  token: string | undefined,
   todayLabel: string,
 ): Promise<SummaryView> {
-  const response = await adminClient(assertion).admin.summary.$get();
+  const response = await adminClient(token).admin.summary.$get();
   return summaryFromResponse(response, todayLabel);
 }
 
 export async function readOrders(
-  assertion: string | undefined,
+  token: string | undefined,
   request: OrdersRequest,
 ): Promise<OrdersView> {
-  const response = await env.API.fetch(ordersUrl(request), { headers: accessHeaders(assertion) });
+  const response = await env.API.fetch(ordersUrl(request), { headers: bearerHeaders(token) });
   return ordersFromResponse(response);
 }
 
-export async function readOrder(assertion: string | undefined, code: string): Promise<OrderView> {
-  const response = await adminClient(assertion).admin.orders[":code"].$get({ param: { code } });
+export async function readOrder(token: string | undefined, code: string): Promise<OrderView> {
+  const response = await adminClient(token).admin.orders[":code"].$get({ param: { code } });
   return orderFromResponse(response);
 }
 
 export async function postStatus(
-  assertion: string | undefined,
+  token: string | undefined,
   code: string,
   to: OrderStatus,
 ): Promise<StatusUpdate> {
-  const response = await adminClient(assertion).admin.orders[":code"].status.$post({
+  const response = await adminClient(token).admin.orders[":code"].status.$post({
     param: { code },
     json: { to },
   });
@@ -158,8 +156,8 @@ export function captureResponse(upstream: StatusResponse): Response {
   return new Response(upstream.body, { status: upstream.status, headers });
 }
 
-export async function readCapture(assertion: string | undefined, code: string): Promise<Response> {
-  const response = await adminClient(assertion).admin.orders[":code"].capture.$get({
+export async function readCapture(token: string | undefined, code: string): Promise<Response> {
+  const response = await adminClient(token).admin.orders[":code"].capture.$get({
     param: { code },
   });
   return captureResponse(response);
