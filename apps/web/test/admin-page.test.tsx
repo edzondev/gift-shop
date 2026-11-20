@@ -11,15 +11,24 @@ beforeEach(() => {
   resetApiFetch();
 });
 
-it("renders Sin acceso and no order data when the API refuses the request", async () => {
+it("redirects /admin to login when the API answers 401 and hides the order", async () => {
   setApiFetch(async () =>
     Response.json({ customerName: "SECRETO-PEDIDO", note: "SECRETO" }, { status: 401 }),
   );
   const page = await renderPath("/admin");
-  expect(page.status).toBe(401);
-  expect(page.html).toContain("Sin acceso");
+  expect(page.pathname).toBe("/admin/login");
+  expect(page.html).toContain("Entrar");
   expect(page.html).not.toContain("SECRETO");
   expect(page.html).not.toContain("Lucía");
+});
+
+it("redirects /admin to login when the session cookie is missing", async () => {
+  setApiFetch(async () => Response.json(summary));
+  const page = await renderPath("/admin", "anonymous");
+  expect(page.pathname).toBe("/admin/login");
+  expect(page.html).toContain("Entrar");
+  expect(page.html).not.toContain("Lucía");
+  expect(page.html).not.toContain("Buenos días");
 });
 
 it("keeps the 403 status when the API forbids the panel", async () => {
@@ -78,4 +87,5 @@ it("ignores an invalid status filter and keeps a long note on its own lines", as
   expect(detail.html).toContain(longName);
   expect(detail.html).toContain("Confirmar pago");
   expect(detail.html).toContain("Rechazar");
+  expect(detail.html).toContain("Salir");
 });

@@ -30,7 +30,7 @@ export function documentStatus(): number | undefined {
 
 export function withAccessRequest<T>(token: string | undefined, run: () => T): T {
   const headers = new Headers();
-  if (token !== undefined) headers.set("Cf-Access-Jwt-Assertion", token);
+  if (token !== undefined) headers.set("cookie", `admin_session=${encodeURIComponent(token)}`);
   const request = new Request("https://taller.test/admin", { headers });
   const start = storage(Symbol.for("tanstack-start:start-storage-context"));
   const event = storage(Symbol.for("tanstack-start:event-storage"));

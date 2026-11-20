@@ -32,7 +32,7 @@ export function OrderDetail({ loaded }: { loaded: AdminOrder }) {
     sendState.current = { sending: false };
   }
 
-  if (update?.kind === "denied") return <SinAcceso />;
+  if (update?.kind === "denied") return <SinAcceso status={update.status} />;
 
   const order = visibleOrder(loaded, update);
   const message = statusMessage(update);
@@ -115,7 +115,7 @@ export function OrderDetail({ loaded }: { loaded: AdminOrder }) {
         <section className="card capture-card">
           <img
             className="capture"
-            src={`/admin/captura/${encodeURIComponent(order.code)}`}
+            src={`/admin/evidencia/${encodeURIComponent(order.code)}`}
             alt={`Captura de Yape de ${order.customer.name}`}
           />
           <div>

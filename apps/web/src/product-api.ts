@@ -75,10 +75,10 @@ export function classifyStock(status: number, body: unknown): StockView {
 }
 
 export async function readProducts(
-  assertion: string | undefined,
+  token: string | undefined,
   cursor: string | undefined,
 ): Promise<ProductsView> {
-  const response = await adminClient(assertion).admin.products.$get({
+  const response = await adminClient(token).admin.products.$get({
     query: { cursor, limit: "20" },
   });
   if (deniedStatus(response.status)) return { kind: "denied", status: response.status };
@@ -88,12 +88,9 @@ export async function readProducts(
   return { kind: "ok", page };
 }
 
-export async function readProductById(
-  assertion: string | undefined,
-  id: string,
-): Promise<ProductView> {
+export async function readProductById(token: string | undefined, id: string): Promise<ProductView> {
   try {
-    const response = await adminClient(assertion).admin.products[":id"].$get({ param: { id } });
+    const response = await adminClient(token).admin.products[":id"].$get({ param: { id } });
     const status = response.status;
     if (deniedStatus(status)) return { kind: "denied", status };
     if (status === 404) {
@@ -110,19 +107,19 @@ export async function readProductById(
 }
 
 export async function createProduct(
-  assertion: string | undefined,
+  token: string | undefined,
   input: ProductInput,
 ): Promise<WriteView> {
-  const response = await adminClient(assertion).admin.products.$post({ json: input });
+  const response = await adminClient(token).admin.products.$post({ json: input });
   return classifyWrite(response.status, await payload(response));
 }
 
 export async function patchProduct(
-  assertion: string | undefined,
+  token: string | undefined,
   id: string,
   patch: ProductPatch,
 ): Promise<WriteView> {
-  const response = await adminClient(assertion).admin.products[":id"].$patch({
+  const response = await adminClient(token).admin.products[":id"].$patch({
     param: { id },
     json: patch,
   });
@@ -130,11 +127,11 @@ export async function patchProduct(
 }
 
 export async function postStock(
-  assertion: string | undefined,
+  token: string | undefined,
   id: string,
   delta: number,
 ): Promise<StockView> {
-  const response = await adminClient(assertion).admin.products[":id"].stock.$post({
+  const response = await adminClient(token).admin.products[":id"].stock.$post({
     param: { id },
     json: { delta },
   });

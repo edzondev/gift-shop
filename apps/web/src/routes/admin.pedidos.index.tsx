@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { listAdminOrders } from "../admin.functions";
 import { ordersRequest, ordersSearch } from "../admin-search";
 import { OrderFilters } from "../components/order-filters";
@@ -8,7 +8,11 @@ import { SinAcceso } from "../components/sin-acceso";
 export const Route = createFileRoute("/admin/pedidos/")({
   validateSearch: (search: Record<string, unknown>) => ordersSearch(search),
   loaderDeps: ({ search }) => ordersRequest(search),
-  loader: ({ deps }) => listAdminOrders({ data: deps }),
+  loader: async ({ deps }) => {
+    const orders = await listAdminOrders({ data: deps });
+    if (orders.kind === "denied" && orders.status === 401) throw redirect({ to: "/admin/login" });
+    return orders;
+  },
   head: () => ({
     meta: [{ title: "Pedidos" }],
   }),
@@ -27,7 +31,7 @@ function OrdersError() {
 function OrdersPage() {
   const search = Route.useSearch();
   const result = Route.useLoaderData();
-  if (result.kind === "denied") return <SinAcceso />;
+  if (result.kind === "denied") return <SinAcceso status={result.status} />;
   if (result.kind !== "ok") return <OrdersError />;
   return (
     <div className="stack">

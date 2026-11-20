@@ -1,11 +1,10 @@
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import type { AdminProduct, Page } from "api";
 import { useRef, useState } from "react";
 import { cursorToLoad } from "../admin-orders-page";
 import { listAdminProducts } from "../product.functions";
 import { appendProducts } from "../product-list-page";
 import { ProductRow } from "./product-row";
-import { SinAcceso } from "./sin-acceso";
 
 export function ProductList({ first }: { first: Page<AdminProduct> }) {
   const [extra, setExtra] = useState<Page<AdminProduct> | null>(null);
@@ -14,7 +13,7 @@ export function ProductList({ first }: { first: Page<AdminProduct> }) {
   const [denied, setDenied] = useState(false);
   const busy = useRef(false);
   const page = extra ?? first;
-  if (denied) return <SinAcceso />;
+  if (denied) return <Navigate to="/admin/login" />;
 
   function loadMore() {
     const cursor = cursorToLoad({ loading: busy.current || loading, nextCursor: page.nextCursor });
