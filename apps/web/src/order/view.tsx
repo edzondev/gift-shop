@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { PublicOrder } from "api";
+import { ProductPhoto } from "../components/product-photo";
 import {
   slotLabel,
   stationLabel,
@@ -9,6 +10,7 @@ import {
   timelineIndex,
 } from "../labels";
 import { formatSoles } from "../money";
+import { giftCount, progressStep, rejectedOrder, thanksLead } from "./copy";
 
 function deliveryText(order: PublicOrder): string {
   switch (order.delivery.mode) {
@@ -32,71 +34,141 @@ function deliveryCost(cents: number | null): string {
   return formatSoles(cents);
 }
 
+function stepMark(index: number, stepIndex: number): "done" | "current" | "upcoming" {
+  if (index < 0 || stepIndex > index) return "upcoming";
+  if (stepIndex < index) return "done";
+  return "current";
+}
+
 export function OrderView({ order }: { order: PublicOrder }) {
   const index = timelineIndex(order.status);
+  const rejected = rejectedOrder(order.status);
+  const step = progressStep(order.status);
   const total = order.subtotalCents + (order.deliveryCostCents ?? 0);
+  const count = order.items.reduce((sum, item) => sum + item.qty, 0);
+  const place = order.delivery.mode === "estacion" ? "Estación del tren" : "Delivery a domicilio";
   return (
-    <main className="sheet">
-      <p className="kicker">Tu pedido</p>
-      <h1>{order.code}</h1>
-      <p>
-        Estado: <strong>{statusLabel(order.status)}</strong>. {statusDetail(order.status)}
-      </p>
-      {index < 0 ? null : (
-        <ol className="timeline">
-          {TIMELINE.map((step, stepIndex) => {
-            const state = stepIndex < index ? "done" : stepIndex === index ? "current" : "upcoming";
-            return (
-              <li key={step} className={state}>
-                <span>{stepIndex + 1}</span>
-                <strong>{statusLabel(step)}</strong>
-                <small>{statusDetail(step)}</small>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-      <section>
-        <h2>Regalos</h2>
+    <main className="shop order-page">
+      <div className="shop-wrap">
+        <header className="order-hero">
+          <span className="order-gift" aria-hidden="true">
+            <GiftIcon />
+          </span>
+          <h1>¡Gracias!</h1>
+          <p className="order-lead">
+            Tu pedido <span className="order-code">{order.code}</span> {thanksLead(order.status)}
+          </p>
+          <p className="order-detail">{statusDetail(order.status)}</p>
+        </header>
+        <section className="order-status">
+          <h2>Estado de tu pedido</h2>
+          {rejected ? (
+            <p className="order-rejected" role="status">
+              {statusLabel(order.status)}. {statusDetail(order.status)}
+            </p>
+          ) : null}
+          <div
+            className="timeline-wrap"
+            data-step={String(step)}
+            data-rejected={rejected ? "true" : "false"}
+          >
+            <span className="timeline-track" aria-hidden="true">
+              <span className="timeline-fill" />
+            </span>
+            <ol className="timeline">
+              {TIMELINE.map((status, stepIndex) => {
+                const state = stepMark(index, stepIndex);
+                return (
+                  <li
+                    key={status}
+                    className={`timeline-${state}`}
+                    aria-current={state === "current" ? "step" : undefined}
+                  >
+                    <span className="timeline-mark">{state === "done" ? "✓" : stepIndex + 1}</span>
+                    <strong>{statusLabel(status)}</strong>
+                    <small>{statusDetail(status)}</small>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </section>
+        <div className="order-facts">
+          <article>
+            <span>Entrega</span>
+            <b>{place}</b>
+            <p>{deliveryText(order)}</p>
+            <p>Fecha: {order.deliveryDate}</p>
+          </article>
+          <article>
+            <span>Pago con Yape</span>
+            <b>{formatSoles(total)}</b>
+            <p>Operación {order.yapeOperation}</p>
+            <p>Entrega {deliveryCost(order.deliveryCostCents)}</p>
+          </article>
+          <article>
+            <span>Tus regalos</span>
+            <b>{giftCount(count)}</b>
+            <p>{order.items.map((item) => item.productName).join(", ")}</p>
+          </article>
+        </div>
         <ul className="cart-list">
           {order.items.map((item) => (
             <li key={`${item.productName}-${item.lineTotalCents}-${item.qty}`}>
+              <ProductPhoto
+                photoKey={undefined}
+                label={item.productName}
+                frame="thumb"
+                priority={false}
+                decorative
+              />
               <div>
                 <strong>
                   {item.productName} × {item.qty}
                 </strong>
                 <p>{item.options.join(" · ")}</p>
-                {item.cardMessage !== null ? <p>Dedicatoria: {item.cardMessage}</p> : null}
+                {item.cardMessage !== null ? <p className="cart-note">{item.cardMessage}</p> : null}
               </div>
               <strong>{formatSoles(item.lineTotalCents)}</strong>
             </li>
           ))}
         </ul>
-      </section>
-      <section>
-        <h2>Entrega</h2>
-        <p>{order.delivery.mode === "estacion" ? "Estación del tren" : "Delivery a domicilio"}</p>
-        <p>{deliveryText(order)}</p>
-        <p>Fecha: {order.deliveryDate}</p>
-      </section>
-      <section className="summary">
-        <p>
+        <p className="order-money">
           <span>Subtotal</span>
           <b>{formatSoles(order.subtotalCents)}</b>
         </p>
-        <p>
+        <p className="order-money">
           <span>Entrega</span>
           <b>{deliveryCost(order.deliveryCostCents)}</b>
         </p>
-        <p className="subtotal">
+        <p className="order-money order-sum">
           <span>Total</span>
           <strong>{formatSoles(total)}</strong>
         </p>
-        <p>Operación {order.yapeOperation}</p>
-      </section>
-      <Link to="/catalogo" search={{ occasion: undefined }}>
-        Seguir explorando regalos
-      </Link>
+        <Link to="/catalogo" search={{ occasion: undefined }} className="order-more">
+          Seguir explorando regalos
+        </Link>
+      </div>
     </main>
+  );
+}
+
+function GiftIcon() {
+  return (
+    <svg
+      width="46"
+      height="46"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#1A1A1A"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3.5" y="8" width="17" height="4.5" rx="1.2" />
+      <path d="M5 12.5V20h14v-7.5M12 8v12" />
+      <path d="M12 8C10.6 5 7 4.6 7 6.8 7 8 9 8 12 8zm0 0c1.4-3 5-3.4 5-1.2C17 8 15 8 12 8z" />
+    </svg>
   );
 }

@@ -19,7 +19,10 @@ export function ScheduleFields({
 }) {
   return (
     <section className="panel">
-      <h2>¿Para cuándo?</h2>
+      <h2>
+        <span className="step-n">3</span>
+        ¿Para cuándo?
+      </h2>
       <Field id="deliveryDate" label="Fecha de entrega" error={errors.deliveryDate}>
         <input
           {...fieldProps("deliveryDate", errors.deliveryDate)}
@@ -34,6 +37,7 @@ export function ScheduleFields({
         <textarea
           {...fieldProps("note", errors.note)}
           rows={3}
+          placeholder="Es sorpresa, no llamar antes…"
           value={note}
           onChange={(event) => onNote(controlValue(event.currentTarget))}
         />

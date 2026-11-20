@@ -26,14 +26,17 @@ export function PaymentFields({
   onFile: (file: File | null) => void;
 }) {
   return (
-    <section className="panel">
-      <h2>Pago con Yape</h2>
+    <section className="panel yape">
+      <p className="shop-kicker">Último paso</p>
+      <h2>Yapea y listo</h2>
       <div className="pay-box">
         <span>Monto exacto a yapear</span>
         <strong>{formatSoles(totalCents)}</strong>
-        <span>Número</span>
+        <span>O yapea al número</span>
         <b>{yapeNumber}</b>
-        <span>A nombre de {yapeName}</span>
+        <span>
+          A nombre de <b>{yapeName}</b>
+        </span>
       </div>
       <ol className="steps">
         <li>Abre Yape y yapea al número</li>
@@ -54,12 +57,14 @@ export function PaymentFields({
           {...fieldProps("yapeOperation", error)}
           inputMode="numeric"
           autoComplete="off"
+          placeholder="Ej. 08452317"
           value={operation}
           onChange={(event) => onOperation(controlValue(event.currentTarget))}
         />
       </Field>
-      <button type="submit" className="primary" disabled={sending}>
-        {sending ? "Enviando tu pedido…" : "Enviar pedido"}
+      <p className="yape-note">Tu pago será verificado por nosotros. Te avisaremos por WhatsApp.</p>
+      <button type="submit" className="shop-cta" disabled={sending}>
+        {sending ? "Enviando tu pedido…" : "Enviar pedido 🎁"}
       </button>
     </section>
   );

@@ -1,0 +1,115 @@
+.shop {
+  width: calc(100% + 3rem);
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  min-width: 0;
+  color: var(--color-text);
+  animation: shop-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.shop-wrap {
+  max-width: 1376px;
+  margin: 0 auto;
+  min-width: 0;
+  padding: clamp(28px, 4vw, 72px) clamp(16px, 3.4vw, 48px) clamp(72px, 8vw, 120px);
+}
+
+.shop h1,
+.shop h2,
+.cart-name,
+.product-card-name {
+  overflow-wrap: anywhere;
+}
+
+.shop-kicker {
+  margin: 0;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(22px, 2vw, 26px);
+  line-height: 1.1;
+  color: var(--color-terracotta-text);
+}
+
+.shop-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 18px;
+  color: var(--color-text);
+  background-color: var(--color-mustard);
+  background-image: linear-gradient(var(--color-text), var(--color-text));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0% 100%;
+  font-weight: 800;
+  font-size: 17px;
+  text-decoration: none;
+  transition:
+    background-size 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 0.3s,
+    gap 0.3s;
+}
+
+.shop-cta:hover {
+  background-size: 100% 100%;
+  color: var(--color-background);
+  gap: 16px;
+}
+
+.shop-cta:disabled {
+  color: #8c857b;
+  background: #e4ddd2;
+  background-image: none;
+}
+
+.cart-page .product-photo,
+.order-page .cart-list .product-photo,
+.checkout-page .summary .product-photo {
+  width: 84px;
+  height: 100px;
+  flex: none;
+  aspect-ratio: auto;
+  border-radius: 16px;
+}
+
+.cart-note {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@keyframes shop-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .shop {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop,
+  .shop-cta,
+  .product-card-media .product-photo,
+  .add-cart,
+  .receive button,
+  .timeline-fill {
+    animation: none;
+    transition: none;
+  }
+}

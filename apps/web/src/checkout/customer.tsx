@@ -21,25 +21,32 @@ export function CustomerFields({
 }) {
   return (
     <section className="panel">
-      <h2>Tus datos</h2>
+      <h2>
+        <span className="step-n">1</span>
+        Tus datos
+      </h2>
       <div className="grid-2">
         <Field id="name" label="Nombre completo" error={errors.name}>
           <input
             {...fieldProps("name", errors.name)}
             autoComplete="name"
+            placeholder="¿Cómo te llamas?"
             value={name}
             onChange={(event) => onName(controlValue(event.currentTarget))}
           />
         </Field>
         <Field id="phone" label="WhatsApp" error={errors.phone}>
-          <input
-            {...fieldProps("phone", errors.phone)}
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="987 654 321"
-            value={phone}
-            onChange={(event) => onPhone(controlValue(event.currentTarget))}
-          />
+          <span className="phone">
+            <span className="phone-prefix">+51</span>
+            <input
+              {...fieldProps("phone", errors.phone)}
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="987 654 321"
+              value={phone}
+              onChange={(event) => onPhone(controlValue(event.currentTarget))}
+            />
+          </span>
         </Field>
       </div>
       <Field id="email" label="Correo" hint="(opcional)" error={errors.email}>
@@ -47,6 +54,7 @@ export function CustomerFields({
           {...fieldProps("email", errors.email)}
           type="email"
           autoComplete="email"
+          placeholder="tu@correo.com"
           value={email}
           onChange={(event) => onEmail(controlValue(event.currentTarget))}
         />
