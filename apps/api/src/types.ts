@@ -96,6 +96,16 @@ export type AdminOrder = PublicOrder & {
   note: string | null;
 };
 
+export type AdminLoginResponse = {
+  token: string;
+  email: string;
+  expiresAt: string;
+};
+
+export type AdminMeResponse = {
+  email: string;
+};
+
 export type AdminSummary = {
   newToday: number;
   toVerify: number;

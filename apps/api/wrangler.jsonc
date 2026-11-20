@@ -25,9 +25,10 @@
     }
   ],
   "vars": {
-    "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
-    "ACCESS_AUD": "REEMPLAZAR",
-    "ADMIN_EMAIL": "REEMPLAZAR"
+    "ADMIN_EMAIL": "martinezyashira8@gmail.com"
+  },
+  "secrets": {
+    "required": ["ADMIN_PASSWORD", "ADMIN_SESSION_SECRET"]
   },
   "env": {
     "develop": {
@@ -48,9 +49,7 @@
         }
       ],
       "vars": {
-        "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
-        "ACCESS_AUD": "REEMPLAZAR",
-        "ADMIN_EMAIL": "REEMPLAZAR"
+        "ADMIN_EMAIL": "martinezyashira8@gmail.com"
       }
     },
     "production": {
@@ -71,9 +70,7 @@
         }
       ],
       "vars": {
-        "ACCESS_TEAM_DOMAIN": "REEMPLAZAR",
-        "ACCESS_AUD": "REEMPLAZAR",
-        "ADMIN_EMAIL": "REEMPLAZAR"
+        "ADMIN_EMAIL": "martinezyashira8@gmail.com"
       }
     }
   }

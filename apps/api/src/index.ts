@@ -22,6 +22,8 @@ app.onError(onError);
 
 export type AppType = typeof app;
 export type {
+  AdminLoginResponse,
+  AdminMeResponse,
   AdminOrder,
   AdminOrderRow,
   AdminProduct,
