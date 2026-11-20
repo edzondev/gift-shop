@@ -15,12 +15,14 @@ export default defineConfig({
       load(id) {
         const [filename, query] = id.split("?");
         if (!filename?.includes(".css")) return undefined;
+        if (query?.includes("raw")) return undefined;
         if (query?.includes("url")) return `export default ${JSON.stringify(filename)}`;
         return "export default {}";
       },
     },
   ],
   test: {
+    css: { include: [/[?&]raw(?:&|$)/] },
     environment: "node",
     include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
   },

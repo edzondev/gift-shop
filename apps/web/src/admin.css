@@ -763,6 +763,13 @@ h2 {
   }
 }
 
+@media (max-width: 400px) {
+  .admin {
+    width: calc(100% + 2rem);
+    margin: -1rem;
+  }
+}
+
 @media (min-width: 900px) {
   .order-head,
   .order-row {
