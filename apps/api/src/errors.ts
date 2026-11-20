@@ -2,8 +2,16 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 
+export type ApiBindings = {
+  DB: D1Database;
+  FILES: R2Bucket;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
+  ADMIN_SESSION_SECRET?: string;
+};
+
 export type ApiEnv = {
-  Bindings: CloudflareBindings;
+  Bindings: ApiBindings;
   Variables: RequestIdVariables & {
     adminEmail: string;
   };
