@@ -1,0 +1,4 @@
+# Copy to .dev.vars. Never commit real values.
+# ADMIN_SESSION_SECRET must be at least 32 characters.
+ADMIN_PASSWORD=
+ADMIN_SESSION_SECRET=

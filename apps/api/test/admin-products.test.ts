@@ -1,10 +1,9 @@
 import { env } from "cloudflare:workers";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { beforeEach, expect, it } from "vitest";
 import app from "../src/index";
-import { accessPairs, bindings, goodToken, installJwks, restoreAccessFetch } from "./access";
+import { bindings, loginToken, SESSION_SECRET, sessionToken } from "./session";
 
 const UNAUTHORIZED = { error: { code: "unauthorized", message: "Unauthorized" } };
-const FORBIDDEN = { error: { code: "forbidden", message: "Forbidden" } };
 const NOT_FOUND = { error: { code: "product_not_found", message: "Product not found" } };
 const PHOTO_NOT_FOUND = { error: { code: "photo_not_found", message: "Photo not found" } };
 const SLUG_TAKEN = { error: { code: "slug_taken", message: "Slug is already taken" } };
@@ -93,7 +92,7 @@ async function authed(
   options: { method?: string; json?: unknown; form?: FormData } = {},
 ) {
   const headers = new Headers();
-  headers.set("Cf-Access-Jwt-Assertion", await goodToken());
+  headers.set("Authorization", `Bearer ${await loginToken()}`);
   const method = options.method ?? "GET";
   if (options.json !== undefined) {
     headers.set("content-type", "application/json");
@@ -214,13 +213,6 @@ function productsPath(params: Record<string, string> = {}): string {
 
 beforeEach(async () => {
   await reset();
-  const [good] = await accessPairs;
-  if (good === undefined) throw new Error("missing key");
-  installJwks(good.publicKey);
-});
-
-afterEach(() => {
-  restoreAccessFetch();
 });
 
 it.each(ROUTES)("%s %s without a jwt is 401", async (method, path) => {
@@ -770,13 +762,16 @@ it("returns 404 when the product does not exist", async () => {
   expect(await response.json()).toEqual(NOT_FOUND);
 });
 
-it("returns 403 when the jwt email is not the admin", async () => {
+it("returns 401 when the jwt subject is not the admin", async () => {
   await insertProduct({ id: "p01" });
   const headers = new Headers();
-  headers.set("Cf-Access-Jwt-Assertion", await goodToken({ email: "otra@example.com" }));
+  headers.set(
+    "Authorization",
+    `Bearer ${await sessionToken(SESSION_SECRET, { sub: "otra@example.com" })}`,
+  );
   const response = await app.request("/admin/products/p01", { method: "GET", headers }, bindings());
-  expect(response.status).toBe(403);
-  expect(await response.json()).toEqual(FORBIDDEN);
+  expect(response.status).toBe(401);
+  expect(await response.json()).toEqual(UNAUTHORIZED);
 });
 
 it.each(["P01", "ñoño", "a'b", "a b", "a/b", "%", "a\u0000b", "x".repeat(2048)])(

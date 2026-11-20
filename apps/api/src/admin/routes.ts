@@ -4,9 +4,12 @@ import { validator } from "hono/validator";
 import {
   type ApiEnv,
   fileTooLarge,
+  internalError,
+  invalidCredentials,
   invalidTransition,
   orderNotFound,
   outOfStock,
+  payloadTooLarge,
   photoNotFound,
   productNotFound,
   slugTaken,
@@ -15,8 +18,9 @@ import {
   validationError,
 } from "../errors";
 import { MAX_BODY_BYTES } from "../orders/logic";
+import type { AdminLoginResponse, AdminMeResponse } from "../types";
 import { validationHook } from "../validation";
-import { accessAuth } from "./access";
+import { adminAuth, createSession, LOGIN_MAX_BYTES, parseLogin } from "./auth";
 import {
   addProductPhoto,
   adjustStock,
@@ -135,7 +139,31 @@ const products = new Hono<ApiEnv>()
   });
 
 export const admin = new Hono<ApiEnv>()
-  .use("*", accessAuth)
+  .post(
+    "/login",
+    bodyLimit({
+      maxSize: LOGIN_MAX_BYTES,
+      onError: (c) => c.json(payloadTooLarge(), 413),
+    }),
+    async (c) => {
+      const parsed = parseLogin(await c.req.text());
+      if (!parsed.ok) return c.json(validationError(parsed.issues), 422);
+      const session = await createSession(c.env, parsed.value);
+      if (session.type === "misconfigured") return c.json(internalError(), 500);
+      if (session.type === "rejected") return c.json(invalidCredentials(), 401);
+      const body: AdminLoginResponse = {
+        token: session.token,
+        email: session.email,
+        expiresAt: session.expiresAt,
+      };
+      return c.json(body, 200);
+    },
+  )
+  .use("*", adminAuth)
+  .get("/me", (c) => {
+    const body: AdminMeResponse = { email: c.var.adminEmail };
+    return c.json(body, 200);
+  })
   .get("/summary", async (c) => {
     const summary = await readSummary(c.env.DB, new Date());
     return c.json(summary, 200);

@@ -2,9 +2,19 @@ import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { RequestIdVariables } from "hono/request-id";
 
+export type ApiBindings = {
+  DB: D1Database;
+  FILES: R2Bucket;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
+  ADMIN_SESSION_SECRET?: string;
+};
+
 export type ApiEnv = {
-  Bindings: CloudflareBindings;
-  Variables: RequestIdVariables;
+  Bindings: ApiBindings;
+  Variables: RequestIdVariables & {
+    adminEmail: string;
+  };
 };
 
 type ErrorBody = {
@@ -159,11 +169,20 @@ export function unauthorized(): { error: { code: "unauthorized"; message: string
   };
 }
 
-export function forbidden(): { error: { code: "forbidden"; message: string } } {
+export function invalidCredentials(): { error: { code: "invalid_credentials"; message: string } } {
   return {
     error: {
-      code: "forbidden",
-      message: "Forbidden",
+      code: "invalid_credentials",
+      message: "Invalid email or password",
+    },
+  };
+}
+
+export function payloadTooLarge(): { error: { code: "payload_too_large"; message: string } } {
+  return {
+    error: {
+      code: "payload_too_large",
+      message: "Payload is too large",
     },
   };
 }
