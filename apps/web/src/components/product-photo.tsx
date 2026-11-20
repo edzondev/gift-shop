@@ -30,12 +30,14 @@ export function ProductPhoto({
   frame,
   priority,
   decorative,
+  cover = false,
 }: {
   photoKey: string | undefined;
   label: string;
   frame: PhotoFrame;
   priority: boolean;
   decorative: boolean;
+  cover?: boolean;
 }) {
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const view = photoView({
@@ -45,11 +47,14 @@ export function ProductPhoto({
     priority,
     broken: photoIsBroken(failedKey, photoKey),
   });
-  const className = frame === "main" ? "product-photo" : "product-photo product-photo-thumb";
-  const style = {
-    backgroundColor: photoTone(photoKey ?? label),
-    aspectRatio: frame === "main" ? "4 / 5" : "1",
-  };
+  const framed = frame === "main" ? "product-photo" : "product-photo product-photo-thumb";
+  const className = cover ? `${framed} product-photo-cover` : framed;
+  const style = cover
+    ? { backgroundColor: photoTone(photoKey ?? label) }
+    : {
+        backgroundColor: photoTone(photoKey ?? label),
+        aspectRatio: frame === "main" ? "4 / 5" : "1",
+      };
   if (view.kind === "filler" && decorative) {
     return <span className={className} style={style} aria-hidden="true" />;
   }
