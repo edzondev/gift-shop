@@ -92,19 +92,20 @@ export async function readProductById(
   assertion: string | undefined,
   id: string,
 ): Promise<ProductView> {
-  const seen = new Set<string>();
-  let cursor: string | undefined;
-  for (;;) {
-    const page = await readProducts(assertion, cursor);
-    if (page.kind === "denied") return page;
-    if (page.kind !== "ok") return { kind: "failed" };
-    const found = page.page.items.find((item) => item.id === id);
-    if (found !== undefined) return { kind: "ok", product: found };
-    const next = page.page.nextCursor;
-    if (next === null) return { kind: "missing" };
-    if (seen.has(next)) return { kind: "failed" };
-    seen.add(next);
-    cursor = next;
+  try {
+    const response = await adminClient(assertion).admin.products[":id"].$get({ param: { id } });
+    const status = response.status;
+    if (deniedStatus(status)) return { kind: "denied", status };
+    if (status === 404) {
+      if (errorCode(await payload(response)) === "product_not_found") return { kind: "missing" };
+      return { kind: "failed" };
+    }
+    if (status !== 200) return { kind: "failed" };
+    const product = parseAdminProduct(await payload(response));
+    if (product === null) return { kind: "failed" };
+    return { kind: "ok", product };
+  } catch {
+    return { kind: "failed" };
   }
 }
 
