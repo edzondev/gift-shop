@@ -2,7 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import type { ReactNode } from "react";
 import { pedidoHeaders } from "../pedido-headers";
 import stylesCss from "../styles.css?url";
-import { SiteHeader } from "../ui/site-header";
+import { StoreFrame } from "../ui/store-frame";
 
 const fontStylesheet =
   // biome-ignore lint/security/noSecrets: URL pública de Google Fonts, no es una credencial
@@ -35,8 +35,9 @@ function NotFoundPage() {
 function RootComponent() {
   return (
     <RootDocument>
-      <SiteHeader />
-      <Outlet />
+      <StoreFrame>
+        <Outlet />
+      </StoreFrame>
     </RootDocument>
   );
 }

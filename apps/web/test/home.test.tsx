@@ -9,7 +9,7 @@ beforeEach(() => {
 });
 
 const knownRoutes: ReadonlyArray<readonly [string, string]> = [
-  ["/", "<h1>Inicio</h1>"],
+  ["/", "Regalos que"],
   ["/admin", "<h1>Buenos días</h1>"],
 ];
 
